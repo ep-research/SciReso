@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCIREPO — Science repository</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <button type="button" class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span class="menu-icon"></span>
+    </button>
+    <h1 class="site-title">SCIREPO</h1>
+    <div class="header-spacer"></div>
+    <button type="button" class="settings-toggle" id="settings-toggle" aria-label="Settings" aria-expanded="false" aria-haspopup="true">
+      <span class="settings-icon" aria-hidden="true">⚙</span>
+    </button>
+    <div class="settings-panel" id="settings-panel" role="dialog" aria-label="Settings" hidden>
+      <div class="settings-content">
+        <p class="settings-label">Data color</p>
+        <div class="settings-accent-options" id="settings-accent-options"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app">
+    <nav class="nav" id="nav">
+      <ul class="nav-list">
+        <li><a href="#about" class="nav-link active" data-tool="about">About</a></li>
+        <li><a href="#absorption" class="nav-link" data-tool="absorption">Absorption</a></li>
+        <li><a href="#blackbody" class="nav-link" data-tool="blackbody">Blackbody</a></li>
+        <li><a href="#boltzmann" class="nav-link" data-tool="boltzmann">Boltzmann</a></li>
+        <li><a href="#chemical-solution" class="nav-link" data-tool="chemical-solution">Chemical Solution</a></li>
+        <li><a href="#compton" class="nav-link" data-tool="compton">Compton</a></li>
+        <li><a href="#decay" class="nav-link" data-tool="decay">Decay / half-life</a></li>
+        <li><a href="#ideal-gas" class="nav-link" data-tool="ideal-gas">Ideal gas</a></li>
+        <li><a href="#laser-pulse" class="nav-link" data-tool="laser-pulse">Laser Pulse</a></li>
+        <li><a href="#particle" class="nav-link" data-tool="particle">Particle</a></li>
+        <li><a href="#peak-convolution" class="nav-link" data-tool="peak-convolution">Peak Convolution</a></li>
+        <li><a href="#photoionization" class="nav-link" data-tool="photoionization">Photoionization</a></li>
+        <li><a href="#unit-conversion" class="nav-link" data-tool="unit-conversion">Unit Conversion</a></li>
+      </ul>
+    </nav>
+
+    <aside class="inputs-panel">
+      <div class="tool-inputs" id="tool-inputs">
+        <!-- Inputs injected per tool -->
+      </div>
+    </aside>
+
+    <main class="results-panel">
+      <div class="tool-results" id="tool-results">
+        <!-- Results injected per tool -->
+      </div>
+    </main>
+  </div>
+
+  <script src="js/conversion-data.js"></script>
+  <script src="js/chemical-solution.js"></script>
+  <script src="js/absorption.js"></script>
+  <script src="js/laser-pulse.js"></script>
+  <script src="js/particle.js"></script>
+  <script src="js/boltzmann.js"></script>
+  <script src="js/photoionization.js"></script>
+  <script src="js/compton.js"></script>
+  <script src="js/blackbody.js"></script>
+  <script src="js/peak-convolution.js"></script>
+  <script src="js/decay.js"></script>
+  <script src="js/ideal-gas.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
