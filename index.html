@@ -14,7 +14,7 @@
     <button type="button" class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
       <span class="menu-icon"></span>
     </button>
-    <h1 class="site-title">SCIREPO</h1>
+    <h1 class="site-title"><a href="#about" id="site-title-link" data-tool="about">SCIREPO</a></h1>
     <div class="header-spacer"></div>
     <button type="button" class="symbols-toggle" id="symbols-toggle" aria-label="Symbol list" aria-expanded="false" aria-haspopup="true" title="Symbol list">
       <span class="symbols-icon" aria-hidden="true">Σ</span>
@@ -45,27 +45,25 @@
     <nav class="nav" id="nav">
       <ul class="nav-list">
         <li><a href="#about" class="nav-link active" data-tool="about">About</a></li>
-        <li class="nav-section" id="nav-section-calculators">
-          <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="nav-sublist-calculators" id="nav-calculators-btn">Calculators</button>
-          <ul class="nav-sublist" id="nav-sublist-calculators">
-            <li><a href="#absorption" class="nav-link" data-tool="absorption">Absorption</a></li>
-            <li><a href="#blackbody" class="nav-link" data-tool="blackbody">Blackbody</a></li>
-            <li><a href="#boltzmann" class="nav-link" data-tool="boltzmann">Boltzmann</a></li>
-            <li><a href="#chemical-solution" class="nav-link" data-tool="chemical-solution">Chemical Solution</a></li>
-            <li><a href="#compton" class="nav-link" data-tool="compton">Compton</a></li>
-            <li><a href="#decay" class="nav-link" data-tool="decay">Decay / half-life</a></li>
-            <li><a href="#diffraction" class="nav-link" data-tool="diffraction">Diffraction</a></li>
-            <li><a href="#ideal-gas" class="nav-link" data-tool="ideal-gas">Ideal gas</a></li>
-            <li><a href="#heisenberg" class="nav-link" data-tool="heisenberg">Heisenberg</a></li>
-            <li><a href="#laser-pulse" class="nav-link" data-tool="laser-pulse">Laser Pulse</a></li>
-            <li><a href="#particle" class="nav-link" data-tool="particle">Particle</a></li>
-            <li><a href="#peak-convolution" class="nav-link" data-tool="peak-convolution">Peak Convolution</a></li>
-            <li><a href="#photoionization" class="nav-link" data-tool="photoionization">Photoionization</a></li>
-            <li><a href="#refraction" class="nav-link" data-tool="refraction">Refraction (Snell)</a></li>
-            <li><a href="#thin-lens" class="nav-link" data-tool="thin-lens">Thin lens / mirrors</a></li>
-          </ul>
-        </li>
+        <li><a href="#absorption" class="nav-link" data-tool="absorption">Absorption</a></li>
+        <li><a href="#blackbody" class="nav-link" data-tool="blackbody">Blackbody</a></li>
+        <li><a href="#boltzmann" class="nav-link" data-tool="boltzmann">Boltzmann</a></li>
+        <li><a href="#bragg" class="nav-link" data-tool="bragg">Bragg diffraction</a></li>
+        <li><a href="#chemical-solution" class="nav-link" data-tool="chemical-solution">Chemical Solution</a></li>
+        <li><a href="#compton" class="nav-link" data-tool="compton">Compton</a></li>
         <li><a href="#data-plot" class="nav-link" data-tool="data-plot">Data plot</a></li>
+        <li><a href="#decay" class="nav-link" data-tool="decay">Decay / half-life</a></li>
+        <li><a href="#diffraction" class="nav-link" data-tool="diffraction">Diffraction</a></li>
+        <li><a href="#heisenberg" class="nav-link" data-tool="heisenberg">Heisenberg</a></li>
+        <li><a href="#ideal-gas" class="nav-link" data-tool="ideal-gas">Ideal gas</a></li>
+        <li><a href="#laser-pulse" class="nav-link" data-tool="laser-pulse">Laser Pulse</a></li>
+        <li><a href="#particle" class="nav-link" data-tool="particle">Particle</a></li>
+        <li><a href="#peak-convolution" class="nav-link" data-tool="peak-convolution">Peak Convolution</a></li>
+        <li><a href="#photoionization" class="nav-link" data-tool="photoionization">Photoionization</a></li>
+        <li><a href="#refraction" class="nav-link" data-tool="refraction">Refraction (Snell)</a></li>
+        <li><a href="#brilliance" class="nav-link" data-tool="brilliance">Spectral brilliance</a></li>
+        <li><a href="#synchrotron" class="nav-link" data-tool="synchrotron">Synchrotron radiation</a></li>
+        <li><a href="#thin-lens" class="nav-link" data-tool="thin-lens">Thin lens / mirrors</a></li>
         <li><a href="#unit-conversion" class="nav-link" data-tool="unit-conversion">Unit conversion</a></li>
       </ul>
     </nav>
@@ -96,6 +94,9 @@
   <script src="js/blackbody.js"></script>
   <script src="js/peak-convolution.js"></script>
   <script src="js/decay.js"></script>
+  <script src="js/synchrotron.js"></script>
+  <script src="js/brilliance.js"></script>
+  <script src="js/bragg.js"></script>
   <script src="js/ideal-gas.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/app.js"></script>

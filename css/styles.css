@@ -106,6 +106,15 @@ body {
   color: var(--accent);
 }
 
+.site-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-title a:hover {
+  text-decoration: underline;
+}
+
 .header-spacer {
   flex: 1;
 }
@@ -118,7 +127,7 @@ body {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 6px;
-  color: var(--text-muted);
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -127,7 +136,7 @@ body {
 }
 
 .settings-toggle:hover {
-  color: var(--text);
+  color: #fff;
 }
 
 .symbols-toggle {
@@ -138,7 +147,7 @@ body {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 6px;
-  color: var(--text-muted);
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -148,7 +157,17 @@ body {
 }
 
 .symbols-toggle:hover {
-  color: var(--text);
+  color: #fff;
+}
+
+body[data-theme="light"] .symbols-toggle,
+body[data-theme="light"] .settings-toggle {
+  color: #1a1a1a;
+}
+
+body[data-theme="light"] .symbols-toggle:hover,
+body[data-theme="light"] .settings-toggle:hover {
+  color: #1a1a1a;
 }
 
 .symbols-panel {
@@ -781,17 +800,81 @@ body {
 }
 
 /* About page content */
-.about-content {
+.about-description {
   max-width: 52ch;
 }
 
-.about-content p {
+.about-description p {
   margin: 0 0 1rem;
   color: var(--text-muted);
 }
 
-.about-content p:last-child {
+.about-description p:last-child {
   margin-bottom: 0;
+}
+
+.about-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+
+.about-col {
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+.about-col p {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+}
+
+.about-content .about-category {
+  margin: 0.4rem 0 0.15rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.about-content .about-main-category {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.about-content .about-main-category:first-child {
+  margin-top: 0;
+}
+
+.about-content .about-calc-list {
+  margin: 0 0 0.25rem;
+  padding-left: 1.25rem;
+  color: var(--text-muted);
+}
+
+.about-content .about-calc-list a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.about-content .about-calc-list a:hover {
+  text-decoration: underline;
+}
+
+.about-content .about-calc-list li {
+  margin: 0;
+  line-height: 1.25;
+  padding: 0.05rem 0;
+}
+
+@media (max-width: 768px) {
+  .about-content {
+    display: block;
+  }
+  .about-col {
+    max-width: none;
+  }
 }
 
 /* Input and result data tables: fixed column widths (all tools) */
@@ -1171,6 +1254,12 @@ body {
 
 .tool-input-group {
   margin-bottom: 0.25rem;
+}
+
+.tool-input-help {
+  margin: 0.25rem 0 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
 }
 
 .tool-input-table .input-desc {
@@ -1735,7 +1824,7 @@ body {
   }
 }
 
-/* Mobile: hamburger menu */
+/* Mobile: hamburger menu + full-width results/plots */
 @media (max-width: 768px) {
   .menu-toggle {
     display: flex;
@@ -1807,6 +1896,25 @@ body {
     width: 100%;
   }
 
+  /* Make result tables and plots fit within viewport width */
+  #tool-results > .tool-results-content,
+  .conversion-table,
+  #abs-results,
+  #lp-results,
+  #part-results,
+  #boltzmann-results,
+  #pi-results,
+  #compton-results,
+  #bb-results,
+  #ideal-gas-results {
+    max-width: 100%;
+  }
+
+  /* Allow input descriptions to wrap on narrow screens */
+  .tool-input-table td.input-desc {
+    white-space: normal;
+  }
+
   .absorption-results-wrap {
     flex-direction: column;
   }
@@ -1854,6 +1962,13 @@ body {
   }
 
   .plot-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Unified plot wrapper and canvas: full-width on mobile */
+  .tool-plot-pane .unified-plot-wrap,
+  .tool-plot-pane .unified-plot-wrap canvas {
     width: 100%;
     max-width: 100%;
   }

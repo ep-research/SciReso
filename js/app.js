@@ -153,10 +153,64 @@
 
   var tools = {
     about: {
-      inputs: '',
-      results: '<div class="about-content">' +
+      inputs: '<div class="about-description">' +
         '<p>SCIREPO — The science repository.</p>' +
         '<p>Online tools and calculators for scientists.</p>' +
+        '</div>',
+      results: '<div class="about-content about-columns">' +
+        '<div class="about-col about-col-data">' +
+        '<h3 class="about-main-category">Data analysis</h3>' +
+        '<h3 class="about-category">Conversions</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#peak-convolution" class="nav-link" data-tool="peak-convolution">Peak Convolution</a></li>' +
+        '<li><a href="#unit-conversion" class="nav-link" data-tool="unit-conversion">Unit conversion</a></li>' +
+        '</ul>' +
+        '<h3 class="about-category">Data visualization</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#data-plot" class="nav-link" data-tool="data-plot">Data plot</a></li>' +
+        '</ul>' +
+        '</div>' +
+        '<div class="about-col about-col-physics">' +
+        '<h3 class="about-main-category">Physics &amp; Chemistry</h3>' +
+        '<h3 class="about-category">Chemistry</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#chemical-solution" class="nav-link" data-tool="chemical-solution">Chemical Solution</a></li>' +
+        '</ul>' +
+        '<h3 class="about-category">Interactions, spectroscopy and scattering</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#absorption" class="nav-link" data-tool="absorption">Absorption</a></li>' +
+        '<li><a href="#bragg" class="nav-link" data-tool="bragg">Bragg diffraction</a></li>' +
+        '<li><a href="#compton" class="nav-link" data-tool="compton">Compton</a></li>' +
+        '<li><a href="#diffraction" class="nav-link" data-tool="diffraction">Diffraction</a></li>' +
+        '<li><a href="#photoionization" class="nav-link" data-tool="photoionization">Photoionization</a></li>' +
+        '</ul>' +
+        '<h3 class="about-category">Laser physics &amp; Optics</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#laser-pulse" class="nav-link" data-tool="laser-pulse">Laser Pulse</a></li>' +
+        '<li><a href="#refraction" class="nav-link" data-tool="refraction">Refraction (Snell)</a></li>' +
+        '<li><a href="#thin-lens" class="nav-link" data-tool="thin-lens">Thin lens / mirrors</a></li>' +
+        '</ul>' +
+        '<h3 class="about-category">Particles &amp; Quantum</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#heisenberg" class="nav-link" data-tool="heisenberg">Heisenberg</a></li>' +
+        '<li><a href="#particle" class="nav-link" data-tool="particle">Particle</a></li>' +
+        '</ul>' +
+        '<h3 class="about-category">Radioactivity</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#decay" class="nav-link" data-tool="decay">Decay / half-life</a></li>' +
+        '</ul>' +
+        '<h3 class="about-category">Synchrotron radiation</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#brilliance" class="nav-link" data-tool="brilliance">Spectral brilliance</a></li>' +
+        '<li><a href="#synchrotron" class="nav-link" data-tool="synchrotron">Synchrotron radiation</a></li>' +
+        '</ul>' +
+        '<h3 class="about-category">Thermodynamics &amp; statistical physics</h3>' +
+        '<ul class="about-calc-list">' +
+        '<li><a href="#blackbody" class="nav-link" data-tool="blackbody">Blackbody</a></li>' +
+        '<li><a href="#boltzmann" class="nav-link" data-tool="boltzmann">Boltzmann</a></li>' +
+        '<li><a href="#ideal-gas" class="nav-link" data-tool="ideal-gas">Ideal gas</a></li>' +
+        '</ul>' +
+        '</div>' +
         '</div>'
     },
     'unit-conversion': { dynamic: true },
@@ -172,10 +226,13 @@
     'data-plot': { dynamic: true },
     decay: { dynamic: true },
     diffraction: { dynamic: true },
+    synchrotron: { dynamic: true },
     'ideal-gas': { dynamic: true },
     heisenberg: { dynamic: true },
     refraction: { dynamic: true },
-    'thin-lens': { dynamic: true }
+    'thin-lens': { dynamic: true },
+    brilliance: { dynamic: true },
+    bragg: { dynamic: true }
   };
 
   var toolInputsEl = document.getElementById('tool-inputs');
@@ -1202,10 +1259,10 @@
     var bwUnit = r.bandwidthMin_Hz >= 1e12 ? 'THz' : 'Hz';
     var durVal = r.duration_FWHM_s != null && !isNaN(r.duration_FWHM_s) ? r.duration_FWHM_s * 1e15 : null;
     var rows = [
-      resultRowValUnit('Spot size (1/e²) X', S.symbolHtml('x'), r.spotX_1e2_um, r.spotX_1e2_um != null && isFinite(r.spotX_1e2_um), 'μm'),
-      resultRowValUnit('Spot size (1/e²) Y', S.symbolHtml('y'), r.spotY_1e2_um, r.spotY_1e2_um != null && isFinite(r.spotY_1e2_um), 'μm'),
-      resultRowValUnit('Spot ' + S.meaning('FWHM') + ' X', S.symbolHtml('FWHM'), r.spotX_FWHM_um, r.spotX_FWHM_um != null && isFinite(r.spotX_FWHM_um), 'μm'),
-      resultRowValUnit('Spot ' + S.meaning('FWHM') + ' Y', S.symbolHtml('FWHM'), r.spotY_FWHM_um, r.spotY_FWHM_um != null && isFinite(r.spotY_FWHM_um), 'μm'),
+      resultRowValUnit('Spot 1/e² diameter, X', S.symbolHtml('x'), r.spotX_1e2_um * 2, r.spotX_1e2_um != null && isFinite(r.spotX_1e2_um), 'μm'),
+      resultRowValUnit('Spot 1/e² diameter, Y', S.symbolHtml('y'), r.spotY_1e2_um * 2, r.spotY_1e2_um != null && isFinite(r.spotY_1e2_um), 'μm'),
+      resultRowValUnit('Spot FWHM, X', S.symbolHtml('FWHM'), r.spotX_FWHM_um, r.spotX_FWHM_um != null && isFinite(r.spotX_FWHM_um), 'μm'),
+      resultRowValUnit('Spot FWHM, Y', S.symbolHtml('FWHM'), r.spotY_FWHM_um, r.spotY_FWHM_um != null && isFinite(r.spotY_FWHM_um), 'μm'),
       resultRowValUnit(S.meaning('lambda'), S.symbolHtml('lambda'), r.wavelength_nm, r.wavelength_nm != null && isFinite(r.wavelength_nm), 'nm'),
       resultRowValUnit('Photon energy', S.symbolHtml('E'), r.wavelength_eV, r.wavelength_eV != null && isFinite(r.wavelength_eV), 'eV'),
       resultRowValUnit('Duration (FWHM)', S.symbolHtml('tau'), durVal, durVal != null && isFinite(durVal), 'fs'),
@@ -1223,7 +1280,12 @@
       resultRowValUnit('Photons per second', '', r.photonsPerSec, r.photonsPerSec != null && isFinite(r.photonsPerSec), ''),
       resultRowValUnit(S.meaning('P_w'), S.symbolHtml('P_w'), r.power_W, r.power_W != null && isFinite(r.power_W), 'W')
     ];
-    var formulaHtml = '<p class="tool-formula">I = P / A (peak intensity)</p><p class="tool-formula">F = E / A (fluence)</p><p class="tool-formula">N<sub>photons</sub> = E / (hν) = E' + S.symbolHtml('lambda') + ' / (hc)</p><p class="tool-formula">Gaussian 1/e² radius = ' + S.symbolHtml('FWHM') + ' / (2' + sqrtHtml('ln 2') + ')</p><p class="tool-formula">Δν · ' + S.symbolHtml('tau') + ' ≥ 0.44 (transform limit, Gaussian)</p>';
+    var formulaHtml =
+      '<p class="tool-formula">I = P / A (peak intensity)</p>' +
+      '<p class="tool-formula">F = E / A (fluence)</p>' +
+      '<p class="tool-formula">N<sub>photons</sub> = E / (hν) = E' + S.symbolHtml('lambda') + ' / (hc)</p>' +
+      '<p class="tool-formula">Gaussian beam: inputs are spot diameters; internal calculations use the 1/e² radius w, with FWHM diameter D related by D = w' + sqrtHtml('2 ln 2') + '.</p>' +
+      '<p class="tool-formula">Δν · ' + S.symbolHtml('tau') + ' ≥ 0.44 (transform limit, Gaussian)</p>';
     var tableHtml = resultTable(rows);
     var resultsContent = document.getElementById('lp-results');
     var equationsContent = toolResultsEl && toolResultsEl.querySelector('.tool-equations-content');
@@ -2651,6 +2713,60 @@
     }
   }
 
+  function getSynchVal(id) {
+    var el = document.getElementById(id);
+    return el ? window.SCIREPO_SYNCHROTRON.parseNum(el.value) : NaN;
+  }
+
+  function runSynchrotron() {
+    var Ssyn = window.SCIREPO_SYNCHROTRON;
+    var modeEl = document.getElementById('synch-mode');
+    var mode = modeEl ? modeEl.value : 'bend';
+    var E_GeV = getSynchVal('synch-E');
+    var I_A = getSynchVal('synch-I');
+    var B_T = getSynchVal('synch-B');
+    var rho_m = getSynchVal('synch-rho');
+    var lambda_u_nm = getSynchVal('synch-lu');
+    var N_periods = getSynchVal('synch-N');
+    var K = getSynchVal('synch-K');
+    var harmonic = getSynchVal('synch-harm');
+    var r = Ssyn.compute({
+      mode: mode,
+      E_GeV: E_GeV,
+      current_A: I_A,
+      B_T: B_T,
+      rho_m: rho_m,
+      lambda_u_m: isFinite(lambda_u_nm) ? lambda_u_nm * 1e-9 : NaN,
+      N_periods: N_periods,
+      K: K,
+      harmonic: harmonic
+    });
+    var rows = [];
+    if (r.error) {
+      rows.push('<tr><td colspan="4" class="placeholder">' + r.error + '</td></tr>');
+    } else {
+      rows.push(resultRowValUnit('Beam energy', S.symbolHtml('E'), r.E_GeV, isFinite(r.E_GeV), 'GeV'));
+      rows.push(resultRowValUnit('Current', 'I', r.current_A, isFinite(r.current_A), 'A'));
+      rows.push(resultRowValUnit('Gamma', S.symbolHtml('gamma'), r.gamma, isFinite(r.gamma), ''));
+      rows.push(resultRowValUnit('Bending radius', 'ρ', r.rho_m, isFinite(r.rho_m), 'm'));
+      rows.push(resultRowValUnit('Critical energy', 'E_c', r.criticalEnergy_eV, isFinite(r.criticalEnergy_eV), 'eV'));
+      rows.push(resultRowValUnit('Total SR power', 'P', r.totalPower_kW, isFinite(r.totalPower_kW), 'kW'));
+      if (mode === 'undulator') {
+        rows.push(resultRowValUnit('Undulator harmonic energy', 'E_n', r.undulator_Eharm_eV, isFinite(r.undulator_Eharm_eV), 'eV'));
+        rows.push(resultRowValUnit('Undulator harmonic wavelength', 'λ_n', r.undulator_lambda_nm, isFinite(r.undulator_lambda_nm), 'nm'));
+      }
+    }
+    var container = document.getElementById('synch-results');
+    if (container) container.innerHTML = resultTable(rows);
+    var eqEl = toolResultsEl && toolResultsEl.querySelector('.tool-equations-content');
+    if (eqEl) {
+      eqEl.innerHTML =
+        '<p class="tool-formula">Bend: E_c = (3/2) ħ c γ³ / ρ</p>' +
+        '<p class="tool-formula">Energy loss/turn: U₀ [MeV] ≈ 0.0885 E⁴ [GeV] / ρ [m]</p>' +
+        '<p class="tool-formula">Undulator: λₙ = λᵤ (1 + K²/2) / (2γ² n)</p>';
+    }
+  }
+
   function drawDecayPlot(container, N0, tHalf_s, r, tUnit) {
     var DECAY = window.SCIREPO_DECAY;
     if (!DECAY || !container) return;
@@ -2895,7 +3011,7 @@
       inputRow('Type', '', '<select id="diffract-type"><option value="single">Single slit</option><option value="double">Double slit</option><option value="grating">Grating</option></select>', '') +
       inputRow('Wavelength', S.symbolHtml('lambda'), '<input type="text" id="diffract-lambda" inputmode="decimal" placeholder="e.g. 600" value="600">', 'nm') +
       inputRow('Slit width', S.symbolHtml('length'), '<input type="text" id="diffract-a" inputmode="decimal" placeholder="e.g. 1" value="1">', 'μm', 'diffract-row-a') +
-      inputRow('Slit separation', S.symbolHtml('distance'), '<input type="text" id="diffract-d" inputmode="decimal" placeholder="e.g. 5" value="5">', 'μm', 'diffract-row-d') +
+      inputRow('Slit separation', S.symbolHtml('d'), '<input type="text" id="diffract-d" inputmode="decimal" placeholder="e.g. 5" value="5">', 'μm', 'diffract-row-d') +
       inputRow('Lines per mm', S.symbolHtml('N'), '<input type="text" id="diffract-N" inputmode="decimal" placeholder="e.g. 600" value="600">', 'mm⁻¹', 'diffract-row-N') +
       '</tbody></table></div>';
     toolResultsEl.innerHTML = buildToolResultsPanel({
@@ -2914,6 +3030,184 @@
     runDiffraction();
     var r = document.getElementById('diffract-reset-defaults');
     if (r) r.addEventListener('click', initDiffraction);
+  }
+
+  function initSynchrotron() {
+    toolInputsEl.innerHTML =
+      toolInputsHeaderHtml('synch-reset-defaults') +
+      '<table class="tool-input-table"><tbody>' +
+      inputRow('Source type', '', '<select id="synch-mode"><option value="bend">Bending magnet</option><option value="wiggler">Wiggler</option><option value="undulator">Undulator</option></select>', '') +
+      inputRow('Beam energy', S.symbolHtml('E'), '<input type="text" id="synch-E" inputmode="decimal" placeholder="e.g. 3" value="3">', 'GeV') +
+      inputRow('Beam current', S.symbolHtml('I'), '<input type="text" id="synch-I" inputmode="decimal" placeholder="e.g. 0.5" value="0.5">', 'A') +
+      inputRow('Dipole field', S.symbolHtml('B'), '<input type="text" id="synch-B" inputmode="decimal" placeholder="e.g. 1.2" value="1.2">', 'T') +
+      inputRow('Bend radius', S.symbolHtml('rho'), '<input type="text" id="synch-rho" inputmode="decimal" placeholder="auto from E,B">', 'm') +
+      inputRow('Period', S.symbolHtml('lambda'), '<input type="text" id="synch-lu" inputmode="decimal" placeholder="e.g. 30" value="30">', 'mm', 'synch-row-lu') +
+      inputRow('Periods', S.symbolHtml('N'), '<input type="text" id="synch-N" inputmode="decimal" placeholder="e.g. 100" value="100">', '', 'synch-row-N') +
+      inputRow('K', 'K', '<input type="text" id="synch-K" inputmode="decimal" placeholder="e.g. 1" value="1">', '', 'synch-row-K') +
+      inputRow('Harmonic', S.symbolHtml('n'), '<input type="text" id="synch-harm" inputmode="decimal" placeholder="e.g. 1" value="1">', '', 'synch-row-harm') +
+      '</tbody></table></div>';
+    toolResultsEl.innerHTML = buildToolResultsPanel({
+      viewButtons: [
+        { view: 'results', label: 'Results' },
+        { view: 'equations', label: 'Equations' }
+      ],
+      resultsId: 'synch-results',
+      equationsHtml: ''
+    });
+    bindInputsToRun(['synch-mode', 'synch-E', 'synch-I', 'synch-B', 'synch-rho', 'synch-lu', 'synch-N', 'synch-K', 'synch-harm'], runSynchrotron);
+    var modeEl = document.getElementById('synch-mode');
+    function updateSynchVisibility() {
+      var mode = (modeEl && modeEl.value) || 'bend';
+      var rowLu = document.getElementById('synch-row-lu');
+      var rowN = document.getElementById('synch-row-N');
+      var rowK = document.getElementById('synch-row-K');
+      var rowH = document.getElementById('synch-row-harm');
+      var showUnd = mode === 'undulator';
+      if (rowLu) rowLu.style.display = showUnd ? '' : 'none';
+      if (rowN) rowN.style.display = showUnd ? '' : 'none';
+      if (rowK) rowK.style.display = showUnd ? '' : 'none';
+      if (rowH) rowH.style.display = showUnd ? '' : 'none';
+    }
+    if (modeEl) modeEl.addEventListener('change', function () {
+      updateSynchVisibility();
+      runSynchrotron();
+    });
+    updateSynchVisibility();
+    runSynchrotron();
+    var r = document.getElementById('synch-reset-defaults');
+    if (r) r.addEventListener('click', initSynchrotron);
+  }
+
+  function initBrilliance() {
+    toolInputsEl.innerHTML =
+      toolInputsHeaderHtml('br-reset-defaults') +
+      '<table class="tool-input-table"><tbody>' +
+      inputRow('Flux', S.symbolHtml('Phi'), '<input type="text" id="br-flux" inputmode="decimal" placeholder="e.g. 1e13" value="1e13">', '') +
+      inputRow('RMS size X', S.symbolHtml('sigma_x'), '<input type="text" id="br-sx" inputmode="decimal" placeholder="e.g. 30" value="30">', 'μm') +
+      inputRow('RMS size Y', S.symbolHtml('sigma_y'), '<input type="text" id="br-sy" inputmode="decimal" placeholder="e.g. 10" value="10">', 'μm') +
+      inputRow('RMS div X', S.symbolHtml('sigma_xp'), '<input type="text" id="br-sxp" inputmode="decimal" placeholder="e.g. 30" value="30">', 'μrad') +
+      inputRow('RMS div Y', S.symbolHtml('sigma_yp'), '<input type="text" id="br-syp" inputmode="decimal" placeholder="e.g. 10" value="10">', 'μrad') +
+      '</tbody></table>' +
+      '<p class="tool-input-help">Φ: photons per second per 0.1% bandwidth. σₓ, σᵧ: RMS source sizes in x,y. σₓ′, σᵧ′: RMS angular divergences in x,y (Gaussian approximation).</p></div>';
+    toolResultsEl.innerHTML = buildToolResultsPanel({
+      viewButtons: [
+        { view: 'results', label: 'Results' },
+        { view: 'equations', label: 'Equations' }
+      ],
+      resultsId: 'br-results',
+      equationsHtml: ''
+    });
+    bindInputsToRun(['br-flux', 'br-sx', 'br-sy', 'br-sxp', 'br-syp'], runBrilliance);
+    runBrilliance();
+    var r = document.getElementById('br-reset-defaults');
+    if (r) r.addEventListener('click', initBrilliance);
+  }
+
+  function initBragg() {
+    toolInputsEl.innerHTML =
+      toolInputsHeaderHtml('bragg-reset-defaults') +
+      '<table class="tool-input-table"><tbody>' +
+      inputRow('Mode', '', '<select id="bragg-mode"><option value="lambda-from-theta" selected>Solve λ from θ</option><option value="theta-from-lambda">Solve θ from λ</option><option value="theta-from-energy">Solve θ from E</option></select>', '') +
+      inputRow('Order', S.symbolHtml('n'), '<input type="text" id="bragg-n" inputmode="decimal" placeholder="e.g. 1" value="1">', '', 'bragg-row-n') +
+      inputRow('d-spacing', S.symbolHtml('d'), '<input type="text" id="bragg-d" inputmode="decimal" placeholder="e.g. 3.1356" value="3.1356">', 'Å', 'bragg-row-d') +
+      inputRow('Bragg angle', S.symbolHtml('theta'), '<input type="text" id="bragg-theta" inputmode="decimal" placeholder="e.g. 15" value="15">', 'deg', 'bragg-row-theta') +
+      inputRow('Wavelength', S.symbolHtml('lambda'), '<input type="text" id="bragg-lambda" inputmode="decimal" placeholder="e.g. 1" value="1">', 'Å', 'bragg-row-lambda') +
+      inputRow('Photon energy', S.symbolHtml('E'), '<input type="text" id="bragg-E" inputmode="decimal" placeholder="e.g. 8" value="8">', 'keV', 'bragg-row-E') +
+      '</tbody></table></div>';
+    toolResultsEl.innerHTML = buildToolResultsPanel({
+      viewButtons: [
+        { view: 'results', label: 'Results' },
+        { view: 'equations', label: 'Equations' }
+      ],
+      resultsId: 'bragg-results',
+      equationsHtml: ''
+    });
+    bindInputsToRun(['bragg-mode', 'bragg-n', 'bragg-d', 'bragg-theta', 'bragg-lambda', 'bragg-E'], runBragg);
+    var modeEl = document.getElementById('bragg-mode');
+    function updateBraggVisibility() {
+      var mode = (modeEl && modeEl.value) || 'lambda-from-theta';
+      var rowTheta = document.getElementById('bragg-row-theta');
+      var rowLambda = document.getElementById('bragg-row-lambda');
+      var rowE = document.getElementById('bragg-row-E');
+      if (rowTheta) rowTheta.style.display = (mode === 'lambda-from-theta') ? '' : 'none';
+      if (rowLambda) rowLambda.style.display = (mode === 'theta-from-lambda') ? '' : 'none';
+      if (rowE) rowE.style.display = (mode === 'theta-from-energy') ? '' : 'none';
+    }
+    if (modeEl) modeEl.addEventListener('change', function () {
+      updateBraggVisibility();
+      runBragg();
+    });
+    updateBraggVisibility();
+    runBragg();
+    var r = document.getElementById('bragg-reset-defaults');
+    if (r) r.addEventListener('click', initBragg);
+  }
+
+  function runBrilliance() {
+    var B = window.SCIREPO_BRILLIANCE;
+    var flux = B.parseNum(document.getElementById('br-flux') && document.getElementById('br-flux').value);
+    var sx = B.parseNum(document.getElementById('br-sx') && document.getElementById('br-sx').value);
+    var sy = B.parseNum(document.getElementById('br-sy') && document.getElementById('br-sy').value);
+    var sxp = B.parseNum(document.getElementById('br-sxp') && document.getElementById('br-sxp').value);
+    var syp = B.parseNum(document.getElementById('br-syp') && document.getElementById('br-syp').value);
+    var r = B.compute({
+      flux_phot_s_01bw: flux,
+      sigma_x_um: sx,
+      sigma_y_um: sy,
+      sigma_xp_urad: sxp,
+      sigma_yp_urad: syp
+    });
+    var rows = [];
+    if (r.error) {
+      rows.push('<tr><td colspan="4" class="placeholder">' + r.error + '</td></tr>');
+    } else {
+      rows.push(resultRowValUnit('Flux', 'Φ', r.flux_phot_s_01bw, isFinite(r.flux_phot_s_01bw), 'photons/s/0.1% BW'));
+      rows.push(resultRowValUnit('Brilliance (SI)', '', r.brilliance_SI, isFinite(r.brilliance_SI), 'photons/(s·m²·sr·0.1% BW)'));
+      rows.push(resultRowValUnit('Brilliance (mm·mrad units)', '', r.brilliance_common, isFinite(r.brilliance_common), 'photons/(s·mm²·mrad²·0.1% BW)'));
+    }
+    var container = document.getElementById('br-results');
+    if (container) container.innerHTML = resultTable(rows);
+    var eqEl = toolResultsEl && toolResultsEl.querySelector('.tool-equations-content');
+    if (eqEl) {
+      eqEl.innerHTML =
+        '<p class="tool-formula">B = Φ / (A · Ω), with A = 2πσₓσᵧ, Ω = 2πσₓ′σᵧ′.</p>';
+    }
+  }
+
+  function runBragg() {
+    var B = window.SCIREPO_BRAGG;
+    var mode = (document.getElementById('bragg-mode') && document.getElementById('bragg-mode').value) || 'lambda-from-theta';
+    var n = B.parseNum(document.getElementById('bragg-n') && document.getElementById('bragg-n').value);
+    var d = B.parseNum(document.getElementById('bragg-d') && document.getElementById('bragg-d').value);
+    var theta = B.parseNum(document.getElementById('bragg-theta') && document.getElementById('bragg-theta').value);
+    var lambda = B.parseNum(document.getElementById('bragg-lambda') && document.getElementById('bragg-lambda').value);
+    var E = B.parseNum(document.getElementById('bragg-E') && document.getElementById('bragg-E').value);
+    var r = B.compute({
+      mode: mode,
+      n: n,
+      d_A: d,
+      theta_deg: theta,
+      lambda_A: lambda,
+      E_keV: E
+    });
+    var rows = [];
+    if (r.error) {
+      rows.push('<tr><td colspan="4" class="placeholder">' + r.error + '</td></tr>');
+    } else {
+      rows.push(resultRowValUnit('Order', S.symbolHtml('n'), r.n, isFinite(r.n), ''));
+      rows.push(resultRowValUnit('d-spacing', S.symbolHtml('d'), r.d_A, isFinite(r.d_A), 'Å'));
+      rows.push(resultRowValUnit('Bragg angle', S.symbolHtml('theta'), r.theta_deg, isFinite(r.theta_deg), 'deg'));
+      rows.push(resultRowValUnit('Wavelength', S.symbolHtml('lambda'), r.lambda_A, isFinite(r.lambda_A), 'Å'));
+      rows.push(resultRowValUnit('Photon energy', S.symbolHtml('E'), r.E_keV, isFinite(r.E_keV), 'keV'));
+    }
+    var container = document.getElementById('bragg-results');
+    if (container) container.innerHTML = resultTable(rows);
+    var eqEl = toolResultsEl && toolResultsEl.querySelector('.tool-equations-content');
+    if (eqEl) {
+      eqEl.innerHTML =
+        '<p class="tool-formula">nλ = 2d sin θ</p>' +
+        '<p class="tool-formula">λ = hc / E</p>';
+    }
   }
 
   function runRefraction() {
@@ -4269,7 +4563,7 @@
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('lp-reset-defaults') +
       '<table class="tool-input-table"><tbody>' +
-      inputRow('Spot size type', '', '<select id="lp-spot-type"><option value="FWHM" selected>' + S.symbolHtml('FWHM') + '</option><option value="1e2">1/e²</option></select>', '') +
+      inputRow('Spot size type', '', '<select id="lp-spot-type"><option value="FWHM" selected>' + S.symbolHtml('FWHM') + '</option><option value="1e2">1/e² (diameter)</option></select>', '') +
       inputRow('Spot X', S.symbolHtml('x'), '<input type="text" id="lp-spot-x" inputmode="decimal" placeholder="e.g. 10" value="10">', 'μm') +
       inputRow('Spot Y', S.symbolHtml('y'), '<input type="text" id="lp-spot-y" inputmode="decimal" placeholder="e.g. 10" value="10">', 'μm') +
       inputRow(S.meaning('lambda'), S.symbolHtml('lambda'), '<input type="text" id="lp-wavelength" inputmode="decimal" placeholder="e.g. 800" value="800">', '<select id="lp-wavelength-unit"><option value="nm" selected>nm</option><option value="eV">eV</option></select>') +
@@ -4277,7 +4571,12 @@
       inputRow('Pulse energy', S.symbolHtml('E'), '<input type="text" id="lp-energy" inputmode="decimal" placeholder="e.g. 1" value="1">', '<select id="lp-energy-unit"><option value="nJ">nJ</option><option value="uJ" selected>μJ</option><option value="mJ">mJ</option><option value="J">J</option></select>') +
       inputRow('Rep. rate', '', '<input type="text" id="lp-rep-rate" inputmode="decimal" placeholder="e.g. 1" value="1000">', '<select id="lp-rep-rate-unit"><option value="Hz">Hz</option><option value="kHz" selected>kHz</option><option value="MHz">MHz</option></select>') +
       '</tbody></table></div>';
-    var lpFormulaHtml = '<p class="tool-formula">I = P / A (peak intensity)</p><p class="tool-formula">F = E / A (fluence)</p><p class="tool-formula">N<sub>photons</sub> = E / (hν) = E' + S.symbolHtml('lambda') + ' / (hc)</p><p class="tool-formula">Gaussian 1/e² radius = ' + S.symbolHtml('FWHM') + ' / (2' + sqrtHtml('ln 2') + ')</p><p class="tool-formula">Δν · ' + S.symbolHtml('tau') + ' ≥ 0.44 (transform limit, Gaussian)</p>';
+    var lpFormulaHtml =
+      '<p class="tool-formula">I = P / A (peak intensity)</p>' +
+      '<p class="tool-formula">F = E / A (fluence)</p>' +
+      '<p class="tool-formula">N<sub>photons</sub> = E / (hν) = E' + S.symbolHtml('lambda') + ' / (hc)</p>' +
+      '<p class="tool-formula">Gaussian beam: inputs are spot diameters; internal calculations use the 1/e² radius w, with FWHM diameter D related by D = w' + sqrtHtml('2 ln 2') + '.</p>' +
+      '<p class="tool-formula">Δν · ' + S.symbolHtml('tau') + ' ≥ 0.44 (transform limit, Gaussian)</p>';
     toolResultsEl.innerHTML = buildToolResultsPanel({
       viewButtons: [
         { view: 'results', label: 'Results' },
@@ -4352,12 +4651,18 @@
       initIdealGas();
     } else if (t.dynamic && id === 'diffraction') {
       initDiffraction();
+    } else if (t.dynamic && id === 'synchrotron') {
+      initSynchrotron();
     } else if (t.dynamic && id === 'heisenberg') {
       initHeisenberg();
     } else if (t.dynamic && id === 'refraction') {
       initRefraction();
     } else if (t.dynamic && id === 'thin-lens') {
       initThinLens();
+    } else if (t.dynamic && id === 'brilliance') {
+      initBrilliance();
+    } else if (t.dynamic && id === 'bragg') {
+      initBragg();
     } else {
       toolInputsEl.innerHTML = t.inputs || '';
       toolResultsEl.innerHTML = t.results || '';
@@ -4565,6 +4870,18 @@
     if (!toolResultsEl || !toolInputsEl) return;
     showTool('about');
     initNav();
+    var siteTitleLink = document.getElementById('site-title-link');
+    if (siteTitleLink) siteTitleLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      showTool('about');
+    });
+    toolResultsEl.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest && e.target.closest('a[data-tool]');
+      if (a) {
+        e.preventDefault();
+        showTool(a.getAttribute('data-tool'));
+      }
+    });
     initMenuToggle();
     initSettings();
     initSymbols();

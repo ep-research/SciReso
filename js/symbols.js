@@ -71,7 +71,14 @@ window.SCIREPO_SYMBOLS = (function () {
     rho:         { meaning: 'Density',                symbol: 'ρ' },
 
     length:      { meaning: 'Length',                symbol: 'ℓ' },
-    distance:    { meaning: 'Distance',               symbol: 'd' },
+    d:           { meaning: 'Spacing',               symbol: 'd' },
+
+    sigma_x:     { meaning: 'Horizontal size',        symbol: 'σₓ' },
+    sigma_y:     { meaning: 'Vertical size',          symbol: 'σᵧ' },
+    sigma_xp:    { meaning: 'Horizontal divergence',  symbol: 'σₓ′' },
+    sigma_yp:    { meaning: 'Vertical divergence',    symbol: 'σᵧ′' },
+
+    Phi:         { meaning: 'Flux',                   symbol: 'Φ' },
 
     n_1:         { meaning: 'Refractive index (1)',   symbol: 'n₁' },
     n_2:         { meaning: 'Refractive index (2)',   symbol: 'n₂' },
