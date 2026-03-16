@@ -38,14 +38,16 @@ window.SCIREPO_DECAY = (function () {
     var tHalfUnit = params.t_half_unit || 's';
     var tUnit = params.t_unit || 's';
 
+    var SYM = window.SCIREPO_SYMBOLS;
+    var sym = SYM ? function (id) { return SYM.symbol(id); } : function (id) { return id; };
     if (N0 == null || isNaN(N0) || N0 < 0) {
-      return { N: NaN, A_Bq: NaN, lambda_s: NaN, halfLivesElapsed: NaN, error: 'Initial amount N₀ must be a non-negative number.' };
+      return { N: NaN, A_Bq: NaN, lambda_s: NaN, halfLivesElapsed: NaN, error: 'Initial amount ' + sym('N0') + ' must be a non-negative number.' };
     }
     if (tHalf == null || isNaN(tHalf) || tHalf <= 0) {
       return { N: NaN, A_Bq: NaN, lambda_s: NaN, halfLivesElapsed: NaN, error: 'Half-life must be a positive number.' };
     }
     if (t == null || isNaN(t) || t < 0) {
-      return { N: NaN, A_Bq: NaN, lambda_s: NaN, halfLivesElapsed: NaN, error: 'Time t must be a non-negative number.' };
+      return { N: NaN, A_Bq: NaN, lambda_s: NaN, halfLivesElapsed: NaN, error: 'Time ' + sym('t') + ' must be a non-negative number.' };
     }
 
     var tHalf_s = timeToSeconds(tHalf, tHalfUnit);

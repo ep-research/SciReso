@@ -22,8 +22,10 @@ window.SCIREPO_BOLTZMANN = (function () {
     if (mode === 'rotational') {
       var B = params.B_cm;
       var maxJ = params.maxJ != null ? Math.max(0, Math.floor(params.maxJ)) : 20;
+      var SYM = window.SCIREPO_SYMBOLS;
+      var symB = SYM ? SYM.symbol('B_rot') : 'B_rot';
       if (B == null || isNaN(B) || B <= 0) {
-        return { levels: [], error: 'Rotational constant B must be positive (cm⁻¹).' };
+        return { levels: [], error: 'Rotational constant ' + symB + ' must be positive (cm⁻¹).' };
       }
       for (var J = 0; J <= maxJ; J++) {
         levels.push({
@@ -35,8 +37,10 @@ window.SCIREPO_BOLTZMANN = (function () {
     } else if (mode === 'vibrational') {
       var omega = params.omega_cm;
       var maxV = params.maxV != null ? Math.max(0, Math.floor(params.maxV)) : 20;
+      var SYM = window.SCIREPO_SYMBOLS;
+      var symO = SYM ? SYM.symbol('omega_e') : 'omega_e';
       if (omega == null || isNaN(omega) || omega <= 0) {
-        return { levels: [], error: 'Vibrational constant ω_e must be positive (cm⁻¹).' };
+        return { levels: [], error: 'Vibrational constant ' + symO + ' must be positive (cm⁻¹).' };
       }
       for (var v = 0; v <= maxV; v++) {
         levels.push({

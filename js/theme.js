@@ -3,16 +3,30 @@
 window.SCIREPO_THEME = (function () {
   'use strict';
 
-  var COLORS = {
-    bg: '#0d0d0d',
-    fg: '#ffffff',
-    muted: 'rgba(255,255,255,0.6)',
-    mutedFill: 'rgba(255,255,255,0.4)',
-    grid: '#2a2a2a',
-    accent: '#06b6d4',
-    accentAlpha: 'rgba(6,182,212,0.9)',
-    guideLine: 'rgba(180,180,180,0.85)'
+  var THEMES = {
+    dark: {
+      bg: '#0d0d0d',
+      fg: '#ffffff',
+      muted: 'rgba(255,255,255,0.6)',
+      mutedFill: 'rgba(255,255,255,0.4)',
+      grid: '#2a2a2a',
+      accent: '#06b6d4',
+      accentAlpha: 'rgba(6,182,212,0.9)',
+      guideLine: 'rgba(180,180,180,0.85)'
+    },
+    light: {
+      bg: '#ffffff',
+      fg: '#1a1a1a',
+      muted: 'rgba(0,0,0,0.55)',
+      mutedFill: 'rgba(0,0,0,0.35)',
+      grid: '#e0e0e0',
+      accent: '#06b6d4',
+      accentAlpha: 'rgba(6,182,212,0.9)',
+      guideLine: 'rgba(100,100,100,0.6)'
+    }
   };
+
+  var COLORS = THEMES.dark;
 
   var PLOT = {
     size: {
@@ -46,6 +60,7 @@ window.SCIREPO_THEME = (function () {
 
   return {
     COLORS: COLORS,
+    THEMES: THEMES,
     PLOT: PLOT,
     TABLE: TABLE
   };

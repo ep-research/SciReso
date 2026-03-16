@@ -1,14 +1,48 @@
-/* SCIREPO — Minimal, professional, black theme */
+/* SCIREPO — Deep black with neon blue accents (default); light theme via body[data-theme="light"] */
 
 :root {
   --bg: #0d0d0d;
   --bg-panel: #141414;
-  --border: #2a2a2a;
+  --border: #252320;
   --text: #f0f0f0;
-  --text-muted: #9a9a9a;
-  --accent: #6b9bd1;
-  --nav-width: 200px;
-  --inputs-width: 200px;
+  --text-muted: #9a8f82;
+  --accent: #00d4ff;
+  --accent-dim: rgba(0, 212, 255, 0.4);
+  --accent-warm: #ffd54f;
+  --accent-warm-dim: rgba(255, 213, 79, 0.35);
+  /* Font groups: change here to retheme typography */
+  --font-title: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-text: 'Inter', system-ui, sans-serif;
+  --font-data: 'Inter', system-ui, sans-serif;
+  --nav-width: 160px;
+  /* Must fit table: (desc+sym+val+unit) in em at table font ≈ 30.5*0.8*16px + padding */
+  --inputs-width: 440px;
+  /* Data tables (input + result): fixed column widths for all tools */
+  --table-font-size: 0.8rem;
+  --table-cell-padding: 0.2rem 0.4rem 0.2rem 0;
+  --table-col-desc: 15em;
+  --table-col-sym: 4em;
+  --table-col-val: 8.5em;
+  --table-col-unit: 5em;
+  /* Unified plot slot: same size and placement in all tools */
+  --plot-slot-width: 520px;
+  --plot-slot-height: 460px;
+  /* Result table only: wider description column (inputs keep --table-col-desc) */
+  --table-col-desc-result: 19em;
+  /* Same width for all result tables; no scrollbars */
+  --results-content-width: calc(var(--table-col-desc-result) + var(--table-col-sym) + var(--table-col-val) + var(--table-col-unit));
+}
+
+body[data-theme="light"] {
+  --bg: #fafafa;
+  --bg-panel: #ffffff;
+  --border: #d4d0c8;
+  --text: #1a1a1a;
+  --text-muted: #5c5c5c;
+  --accent: #0099cc;
+  --accent-dim: rgba(0, 153, 204, 0.35);
+  --accent-warm: #f9a825;
+  --accent-warm-dim: rgba(249, 168, 37, 0.35);
 }
 
 *,
@@ -19,7 +53,7 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-text);
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -37,6 +71,7 @@ body {
   padding: 0.75rem 1rem;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 var(--accent-dim);
 }
 
 .menu-toggle {
@@ -64,9 +99,11 @@ body {
 
 .site-title {
   margin: 0;
+  font-family: var(--font-title);
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  color: var(--accent);
 }
 
 .header-spacer {
@@ -93,6 +130,83 @@ body {
   color: var(--text);
 }
 
+.symbols-toggle {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.symbols-toggle:hover {
+  color: var(--text);
+}
+
+.symbols-panel {
+  position: absolute;
+  top: 100%;
+  right: 4rem;
+  margin-top: 0.25rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 0.75rem 1rem;
+  max-width: 90vw;
+  max-height: 70vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 100;
+}
+
+.symbols-panel[hidden] {
+  display: none;
+}
+
+.symbols-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.symbols-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.15rem 1.25rem;
+  font-size: 0.78rem;
+}
+
+.symbols-list .sym-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.symbols-list .sym-symbol {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  min-width: 2.5em;
+}
+
+.symbols-list .sym-meaning {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .settings-panel {
   position: absolute;
   top: 100%;
@@ -115,6 +229,32 @@ body {
   margin: 0 0 0.5rem;
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.settings-theme-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.settings-theme-btn {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.settings-theme-btn:hover {
+  border-color: var(--text-muted);
+}
+
+.settings-theme-btn.is-active {
+  border-color: currentColor;
+  box-shadow: 0 0 0 1px currentColor;
 }
 
 .settings-accent-options {
@@ -150,6 +290,7 @@ body {
 }
 
 .nav {
+  font-family: var(--font-title);
   width: var(--nav-width);
   flex-shrink: 0;
   background: var(--bg-panel);
@@ -160,15 +301,71 @@ body {
 .nav-list {
   list-style: none;
   margin: 0;
-  padding: 0.5rem 0;
+  padding: 0.25rem 0;
+}
+
+.nav-section {
+  margin-top: 0.25rem;
+}
+
+.nav-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.nav-section-toggle:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-section-toggle::after {
+  content: '';
+  width: 0.4em;
+  height: 0.4em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  margin-left: 0.25rem;
+  transition: transform 0.2s;
+}
+
+.nav-section.is-open .nav-section-toggle::after {
+  transform: rotate(-135deg);
+}
+
+.nav-sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: none;
+}
+
+.nav-section.is-open .nav-sublist {
+  display: block;
+}
+
+.nav-sublist .nav-link {
+  padding-left: 0.9rem;
 }
 
 .nav-link {
   display: block;
-  padding: 0.6rem 1rem;
+  padding: 0.35rem 0.6rem;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   border-left: 3px solid transparent;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
@@ -186,33 +383,354 @@ body {
 
 .inputs-panel {
   width: var(--inputs-width);
+  min-width: var(--inputs-width);
   flex-shrink: 0;
   border-right: 1px solid var(--border);
-  overflow-y: auto;
   background: var(--bg);
   padding: 0.35rem 0.55rem;
+  box-sizing: border-box;
+}
+
+.inputs-panel .tool-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-title);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
 }
 
 .results-panel {
   flex: 1;
-  min-width: 0;
+  min-width: var(--results-content-width);
   min-height: 0;
-  overflow-y: auto;
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .tool-inputs {
   min-height: 80px;
 }
 
+/* Reset button header for tool input blocks (table-based tools) */
+.tool-inputs-wrap .tool-inputs-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
+}
+.tool-inputs-wrap .tool-reset-defaults-btn {
+  padding: 0.12rem 0.35rem;
+  font-size: 0.68rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.tool-inputs-wrap .tool-reset-defaults-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Data plot tool: distinct layout, black background */
+.data-plot-inputs {
+  background: var(--bg);
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  margin: 0 -0.1rem;
+}
+.data-plot-inputs .dp-inputs-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
+}
+.data-plot-inputs .dp-reset-defaults-btn {
+  padding: 0.12rem 0.35rem;
+  font-size: 0.68rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.data-plot-inputs .dp-reset-defaults-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.data-plot-inputs .data-plot-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+.data-plot-inputs .dp-plot-options {
+  margin-bottom: 0;
+}
+.data-plot-inputs .dp-plot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.6rem;
+  margin-bottom: 0.35rem;
+}
+.data-plot-inputs .dp-plot-row:last-child {
+  margin-bottom: 0;
+}
+.data-plot-inputs .dp-plot-row-label {
+  flex: 0 0 5rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.data-plot-inputs .dp-plot-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.18rem 0.3rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 0.75rem;
+}
+.data-plot-inputs .dp-plot-row .dp-title-input,
+.data-plot-inputs .dp-plot-row .dp-axis-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.18rem 0.3rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 0.75rem;
+}
+.data-plot-inputs .dp-plot-row .dp-dataset-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.18rem 0.3rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 0.75rem;
+}
+.data-plot-inputs .dp-plot-row-file input[type="file"] {
+  flex: 1;
+  min-width: 0;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.7rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+}
+.data-plot-inputs .dp-plot-divider {
+  border-top: 1px solid var(--border);
+  margin: 0.4rem 0 0.35rem 0;
+}
+.data-plot-inputs select,
+.data-plot-inputs input[type="file"] {
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.data-plot-inputs .dp-plot-row select,
+.data-plot-inputs .dp-plot-row input[type="file"] {
+  margin-bottom: 0;
+}
+.data-plot-inputs .dp-input-table-wrap {
+  margin-top: 0.35rem;
+}
+.data-plot-inputs .dp-input-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+.data-plot-inputs .dp-input-table th,
+.data-plot-inputs .dp-input-table td {
+  padding: 0.1rem 0.25rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.data-plot-inputs .dp-input-table th {
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.data-plot-inputs .dp-input-table tbody tr.dp-row-selected {
+  background: var(--accent-dim);
+}
+.data-plot-inputs .dp-input-table .dp-row-num {
+  color: var(--text-muted);
+  width: 1.5rem;
+}
+.data-plot-inputs .dp-input-table input.dp-x-cell,
+.data-plot-inputs .dp-input-table input.dp-y-cell {
+  width: 100%;
+  min-width: 0;
+  padding: 0.12rem 0.25rem;
+  box-sizing: border-box;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+}
+.data-plot-inputs .dp-input-table input:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+  box-shadow: 0 0 0 1px var(--accent-warm-dim);
+}
+.data-plot-inputs .dp-table-hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+}
+.data-plot-inputs .dp-table-buttons {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+.data-plot-inputs .dp-add-row,
+.data-plot-inputs .dp-remove-row {
+  padding: 0.2rem 0.45rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.data-plot-inputs .dp-add-row:hover,
+.data-plot-inputs .dp-remove-row:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.data-plot-inputs .dp-add-row {
+  margin-top: 0;
+  color: var(--text);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.data-plot-inputs .dp-plot-row .dp-remove-dataset {
+  flex: 0 0 auto;
+  padding: 0.18rem 0.4rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.data-plot-inputs .dp-plot-row .dp-remove-dataset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.data-plot-inputs .data-plot-source-row {
+  margin-top: 0.25rem;
+}
+.data-plot-inputs .data-plot-source-row label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.data-plot-inputs .dp-plot-row .dp-add-dataset {
+  flex: 0 0 auto;
+  padding: 0.18rem 0.4rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.data-plot-inputs .dp-plot-row .dp-add-dataset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.data-plot-inputs .dp-display-row .dp-display-btns {
+  flex: 1;
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+.data-plot-inputs .dp-display-btn {
+  padding: 0.18rem 0.4rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.data-plot-inputs .dp-display-btn:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+.data-plot-inputs .dp-display-btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.data-plot-inputs .dp-fit-results-wrap {
+  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+.data-plot-inputs .dp-fit-results {
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.data-plot-inputs .dp-legend-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.data-plot-inputs .dp-legend-cell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.data-plot-inputs .dp-legend-cell select {
+  margin: 0;
+  min-width: 8rem;
+}
+
 .tool-results {
   flex: 1;
-  min-height: 120px;
+  min-height: 22rem;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  overflow: visible;
+}
+
+/* Results table/plot area: size to content, always visible when not [hidden], no scrollbars */
+#tool-results > .tool-results-content {
+  display: block !important;
+  flex: 0 0 auto;
+  min-height: 10rem;
+  width: 100%;
+  max-width: var(--results-content-width);
+  overflow: visible;
+}
+#tool-results > .tool-results-content[hidden] {
+  display: none !important;
 }
 
 /* Placeholder / tool content */
@@ -276,31 +794,104 @@ body {
   margin-bottom: 0;
 }
 
-/* Unit conversion table – style from theme (--table-*), table as narrow as content */
-.conversion-table {
-  width: fit-content;
+/* Input and result data tables: fixed column widths (all tools) */
+.conversion-table,
+.tool-input-table {
+  width: 100%;
   max-width: 100%;
   border-collapse: collapse;
-  font-size: var(--table-font-size, 0.82rem);
-  table-layout: auto;
+  font-size: var(--table-font-size);
+  table-layout: fixed;
 }
-
+.conversion-table {
+  width: calc(var(--table-col-desc-result) + var(--table-col-sym) + var(--table-col-val) + var(--table-col-unit));
+}
+.conversion-table th:nth-child(1),
+.conversion-table td:nth-child(1) {
+  width: var(--table-col-desc-result);
+  min-width: var(--table-col-desc-result);
+  max-width: var(--table-col-desc-result);
+}
+.tool-input-table td.input-desc {
+  width: var(--table-col-desc);
+  min-width: var(--table-col-desc);
+  max-width: var(--table-col-desc);
+}
+.conversion-table th:nth-child(2),
+.conversion-table td:nth-child(2),
+.tool-input-table td.input-sym {
+  width: var(--table-col-sym);
+  min-width: var(--table-col-sym);
+  max-width: var(--table-col-sym);
+}
+.conversion-table th:nth-child(3),
+.conversion-table td:nth-child(3),
+.absorption-table td.abs-val,
+.tool-input-table td.input-val {
+  width: var(--table-col-val);
+  min-width: var(--table-col-val);
+  max-width: var(--table-col-val);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.conversion-table th:nth-child(4),
+.conversion-table td:nth-child(4),
+.absorption-table td.abs-unit,
+.tool-input-table td.input-unit {
+  width: var(--table-col-unit);
+  min-width: var(--table-col-unit);
+  max-width: var(--table-col-unit);
+}
 .conversion-table th,
-.conversion-table td {
-  padding: var(--table-cell-padding, 0.2rem 0.35rem 0.2rem 0);
+.conversion-table td,
+.tool-input-table td {
+  padding: var(--table-cell-padding);
   text-align: left;
+  vertical-align: middle;
   border-bottom: 1px solid var(--border);
+  line-height: 1.4;
 }
-
+.conversion-table td:nth-child(3),
+.conversion-table th:nth-child(3),
+.absorption-table td.abs-val,
+.tool-input-table td.input-val {
+  text-align: right;
+}
+.tool-input-table td.input-val input[type="text"],
+.tool-input-table td.input-val select {
+  width: 100%;
+  text-align: right;
+  box-sizing: border-box;
+}
 .conversion-table th:first-child,
-.conversion-table td:first-child {
+.conversion-table td:first-child,
+.tool-input-table td.input-desc {
+  white-space: nowrap;
+}
+.conversion-table .abs-unit,
+.absorption-table .abs-unit,
+.tool-input-table td.input-unit {
   white-space: nowrap;
 }
 
-.conversion-table td:nth-child(2) {
-  min-width: var(--table-val-col-min-width, 4em);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+/* SI: quantity symbols italic, units roman */
+.sym-quantity {
+  font-style: italic;
+}
+.abs-unit,
+.conversion-table .abs-unit,
+.absorption-table .abs-unit {
+  font-style: normal;
+}
+
+.conversion-table .abs-desc,
+.absorption-table .abs-desc {
+  color: var(--text-muted);
+}
+.absorption-table .abs-sym {
+  font-style: italic;
+  color: var(--text);
 }
 
 .conversion-table th {
@@ -312,18 +903,28 @@ body {
   background: rgba(255, 255, 255, 0.03);
 }
 
-/* Narrow results columns for Unit Conversion, Chemical Solution (same as Particle) */
 #uc-results-table,
 #cs-results {
-  max-width: 320px;
   min-width: 0;
-  overflow-x: auto;
+  overflow: visible;
 }
 
-#uc-results-table .abs-val,
-#cs-results .abs-val {
-  min-width: 6em;
-  white-space: nowrap;
+/* Force visibility of unit conversion and decay result areas */
+/* All tool result blocks: same width, no scrollbars (mobile can override max-width) */
+#abs-results,
+#lp-results,
+#part-results,
+#boltzmann-results,
+#pi-results,
+#compton-results,
+#bb-results,
+#decay-results,
+#uc-results-table,
+#cs-results,
+#ideal-gas-results,
+#tool-results > .tool-results-content {
+  max-width: var(--results-content-width);
+  overflow: visible !important;
 }
 
 /* Boltzmann: table left, plot right */
@@ -337,14 +938,7 @@ body {
 
 #boltzmann-results {
   flex-shrink: 0;
-  max-width: 520px;
   min-width: 0;
-  overflow-x: auto;
-}
-
-#boltzmann-results .abs-val {
-  min-width: 5em;
-  white-space: nowrap;
 }
 
 #boltzmann-results h2 {
@@ -375,14 +969,7 @@ body {
 #pi-results,
 #compton-results {
   flex-shrink: 0;
-  max-width: 320px;
   min-width: 0;
-  overflow-x: auto;
-}
-
-#pi-results .abs-val {
-  min-width: 5em;
-  white-space: nowrap;
 }
 
 #pi-results h2,
@@ -403,6 +990,149 @@ body {
   color: var(--text-muted);
   margin: 0 0 0.35rem;
   line-height: 1.4;
+}
+
+.tool-equations-bar {
+  margin: 0.25rem 0 0.35rem;
+}
+
+.tool-equations-toggle {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tool-equations-toggle:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.tool-equations-wrap {
+  margin: 0.35rem 0 0.5rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.tool-equations-wrap .tool-formula {
+  margin: 0.25rem 0;
+}
+
+.tool-equations-wrap .tool-formula:first-child {
+  margin-top: 0;
+}
+
+.tool-view-buttons {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.tool-view-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tool-view-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.tool-view-btn.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(107, 155, 209, 0.1);
+}
+
+.tool-equations-content {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Unified plot view: one plot at a time, same size everywhere */
+.tool-plot-content {
+  display: none;
+  width: var(--plot-slot-width);
+  height: var(--plot-slot-height);
+  min-height: var(--plot-slot-height);
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  overflow: visible;
+}
+/* Data plot: no results table, pull plot up */
+#dp-results:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+#dp-results:empty ~ .tool-plot-content {
+  margin-top: 0;
+}
+#tool-results:has(#dp-results:empty) .tool-view-buttons {
+  margin-bottom: 0.25rem;
+}
+.tool-plot-content.is-visible {
+  display: flex !important;
+  visibility: visible !important;
+}
+.tool-plot-pane {
+  display: none;
+  flex-direction: column;
+  overflow: visible;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 0;
+  flex: 0 0 auto;
+}
+.tool-plot-pane.is-active {
+  display: flex;
+}
+.tool-plot-pane .unified-plot-wrap {
+  width: var(--plot-slot-width);
+  height: var(--plot-slot-height);
+  min-width: var(--plot-slot-width);
+  min-height: var(--plot-slot-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+.tool-plot-pane .unified-plot-wrap canvas {
+  width: var(--plot-slot-width);
+  height: var(--plot-slot-height);
+  display: block;
+}
+
+.tool-equations-content .tool-formula {
+  margin: 0.25rem 0;
+}
+
+.tool-equations-content .tool-formula:first-child {
+  margin-top: 0;
+}
+
+/* Square root: vinculum (overline) over the radicand */
+.sqrt {
+  display: inline;
+  white-space: nowrap;
+}
+.sqrt .sqrt-inner {
+  border-top: 1px solid currentColor;
+  display: inline-block;
+  padding-left: 2px;
+  margin-left: 1px;
 }
 
 .pi-results-table tr.pi-table-sep td {
@@ -441,6 +1171,62 @@ body {
 
 .tool-input-group {
   margin-bottom: 0.25rem;
+}
+
+.tool-input-table .input-desc {
+  color: var(--text-muted);
+}
+.tool-input-table .input-sym {
+  font-style: italic;
+  color: var(--text);
+  padding-right: 0.4rem;
+}
+.tool-input-table .input-val input[type="text"],
+.tool-input-table .input-val select {
+  width: 100%;
+  padding: 0.2rem 0.35rem;
+  font-size: inherit;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  box-sizing: border-box;
+}
+.tool-input-table .input-unit {
+  color: var(--text-muted);
+}
+.tool-input-table .input-unit select {
+  width: 100%;
+  padding: 0.2rem 0.35rem;
+  font-size: inherit;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  box-sizing: border-box;
+}
+.tool-input-table .input-knowns-wrap {
+  padding: 0.15rem 0;
+}
+.tool-input-table .input-knowns-wrap label {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-muted);
+  font-size: var(--table-font-size);
+}
+.tool-input-table .input-knowns-wrap label:first-child { margin-top: 0; }
+.tool-input-table .input-knowns-wrap input,
+.tool-input-table .input-knowns-wrap select {
+  width: 100%;
+  max-width: 9rem;
+  padding: 0.15rem 0.3rem;
+  margin-top: 0.1rem;
+  font-size: inherit;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  box-sizing: border-box;
 }
 
 .tool-input-head {
@@ -543,7 +1329,6 @@ body {
 
 #abs-results {
   flex-shrink: 0;
-  max-width: 200px;
   min-width: 0;
 }
 
@@ -558,7 +1343,7 @@ body {
 }
 
 .absorption-table {
-  font-size: var(--table-font-size, 0.82rem);
+  font-size: var(--table-font-size);
   width: fit-content;
   max-width: 100%;
   table-layout: auto;
@@ -566,11 +1351,12 @@ body {
 
 .absorption-table th,
 .absorption-table td {
-  padding: var(--table-cell-padding, 0.2rem 0.35rem 0.2rem 0);
-  vertical-align: baseline;
+  padding: var(--table-cell-padding);
+  vertical-align: middle;
 }
 
 .absorption-table th:first-child,
+.absorption-table .abs-desc,
 .absorption-table .abs-name {
   color: var(--text-muted);
   white-space: nowrap;
@@ -582,16 +1368,14 @@ body {
 }
 
 .absorption-table .abs-val {
-  min-width: var(--table-val-col-min-width, 4em);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  padding-left: 0.25rem;
+  padding-left: 0.2rem;
 }
 
 .absorption-table .abs-unit {
-  font-size: 0.75rem;
+  font-size: var(--table-font-size);
+  font-style: normal;
   color: var(--text-muted);
-  padding-left: 0.2rem;
+  padding-left: 0.15rem;
   white-space: nowrap;
 }
 
@@ -660,6 +1444,81 @@ body {
   color: var(--text);
 }
 
+.plot-controls .plot-scale-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: 0.25rem;
+}
+
+.plot-controls .plot-scale-btn {
+  padding: 0.15rem 0.4rem;
+  font-size: inherit;
+  background: var(--range-input-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.plot-controls .plot-scale-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.plot-controls .plot-scale-btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.plot-extra-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 0.35rem;
+  font-size: var(--plot-controls-font-size, 0.7rem);
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+.plot-extra-controls .plot-aspect-label {
+  font-size: inherit;
+  color: inherit;
+  white-space: nowrap;
+}
+.plot-extra-controls select {
+  padding: 0.15rem 0.4rem;
+  font-size: inherit;
+  background: var(--range-input-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+}
+.plot-extra-controls select:hover {
+  border-color: var(--text-muted);
+}
+.plot-extra-controls select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.plot-extra-controls .plot-grid-btn,
+.plot-extra-controls .plot-save-png-btn {
+  padding: 0.15rem 0.4rem;
+  font-size: inherit;
+  background: var(--range-input-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.plot-extra-controls .plot-grid-btn:hover,
+.plot-extra-controls .plot-save-png-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
 .bb-plot-wrap {
   flex-shrink: 0;
   width: 520px;
@@ -710,11 +1569,8 @@ body {
   color: var(--text);
 }
 
-/* Peak Convolution: compact results table (same as other tools) */
 .pc-results-wrap {
-  max-width: 320px;
   min-width: 0;
-  overflow-x: auto;
 }
 
 .pc-results-wrap h2 {
@@ -725,15 +1581,6 @@ body {
 .pc-results-wrap .placeholder {
   margin: 0 0 0.35rem;
   font-size: 0.8rem;
-}
-
-.pc-results-wrap .absorption-table {
-  font-size: 0.82rem;
-}
-
-.pc-results-wrap .abs-val {
-  min-width: 5em;
-  white-space: nowrap;
 }
 
 /* X/Y range inputs: 2x2 grid */
@@ -769,7 +1616,6 @@ body {
 
 #lp-results {
   flex-shrink: 0;
-  max-width: 200px;
   min-width: 0;
 }
 
@@ -829,9 +1675,7 @@ body {
 
 #part-results {
   flex-shrink: 0;
-  max-width: 320px;
   min-width: 0;
-  overflow-x: auto;
 }
 
 .part-plots-wrap {
@@ -855,11 +1699,6 @@ body {
 #part-results .placeholder {
   margin: 0 0 0.35rem;
   font-size: 0.8rem;
-}
-
-#part-results .abs-val {
-  min-width: 6em;
-  white-space: nowrap;
 }
 
 /* Mobile: table/plot switcher dropdown (only visible on small screens) */
@@ -900,6 +1739,38 @@ body {
 @media (max-width: 768px) {
   .menu-toggle {
     display: flex;
+  }
+
+  /* Header buttons: larger touch targets */
+  .symbols-toggle,
+  .settings-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Symbols panel: full-width with margins, above nav */
+  .symbols-panel {
+    left: 0.5rem;
+    right: 0.5rem;
+    max-width: none;
+    max-height: 60vh;
+    z-index: 110;
+  }
+
+  .symbols-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .symbols-list .sym-row {
+    white-space: normal;
+  }
+
+  .symbols-list .sym-meaning {
+    word-break: break-word;
   }
 
   .app {
@@ -985,6 +1856,16 @@ body {
   .plot-panel {
     width: 100%;
     max-width: 100%;
+  }
+
+  .plot-controls {
+    margin-top: 0.5rem;
+    padding-bottom: 0.25rem;
+    gap: 0.4rem 0.6rem;
+  }
+
+  .plot-controls .plot-control input {
+    width: 3.4rem;
   }
 
   .part-results-wrap {

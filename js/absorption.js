@@ -76,7 +76,9 @@ window.SCIRESULTS_ABSORPTION = (function () {
     }
     /* for linear, alpha already set above */
 
-    if (isNaN(alpha) || alpha < 0) { out.error = 'Invalid coefficient or derived α.'; return out; }
+    var SYM = window.SCIREPO_SYMBOLS;
+    var symA = SYM ? SYM.symbol('alpha') : 'alpha';
+    if (isNaN(alpha) || alpha < 0) { out.error = 'Invalid coefficient or derived ' + symA + '.'; return out; }
 
     out.alpha_per_cm = alpha;
     out.I_I0 = Math.exp(-alpha * L_cm);

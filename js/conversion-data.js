@@ -13,7 +13,7 @@ window.SCIRESULTS_CONVERSION = {
     units: [
       { id: 'eV', label: 'eV', name: 'Electronvolts', factor: 1.602176634e-19 },
       { id: 'cm-1', label: 'cm⁻¹', name: 'Wavenumber', factor: h * c * 100 },
-      { id: 'nm', label: 'nm (λ)', name: 'Wavelength', factor: null, toBase: function (v) { return (hc * 1e9) / v; }, fromBase: function (E) { return (hc * 1e9) / E; } },
+      { id: 'nm', label: 'nm (' + (typeof window !== 'undefined' && window.SCIREPO_SYMBOLS ? window.SCIREPO_SYMBOLS.symbol('lambda') : 'lambda') + ')', name: 'Wavelength', factor: null, toBase: function (v) { return (hc * 1e9) / v; }, fromBase: function (E) { return (hc * 1e9) / E; } },
       { id: 'Ha', label: 'Hartree', name: 'Hartree', factor: 4.359744722e-18 },
       { id: 'Ry', label: 'Rydberg', name: 'Rydberg', factor: 2.179872361e-18 },
       { id: 'Hz', label: 'Hz', name: 'Hertz', factor: h },
@@ -128,6 +128,22 @@ window.SCIRESULTS_CONVERSION = {
       { id: 'W/cm2', label: 'W/cm²', name: 'Watts per square centimetre', factor: 1e4 },
       { id: 'MW/m2', label: 'MW/m²', name: 'Megawatts per square metre', factor: 1e6 },
       { id: 'erg/s/cm2', label: 'erg/(s·cm²)', name: 'Ergs per second per square centimetre', factor: 1e-3 }
+    ]
+  },
+  radioactivity: {
+    base: 'Bq',
+    units: [
+      { id: 'Bq', label: 'Bq', name: 'Becquerel', factor: 1 },
+      { id: 'kBq', label: 'kBq', name: 'Kilobecquerel', factor: 1e3 },
+      { id: 'MBq', label: 'MBq', name: 'Megabecquerel', factor: 1e6 },
+      { id: 'GBq', label: 'GBq', name: 'Gigabecquerel', factor: 1e9 },
+      { id: 'TBq', label: 'TBq', name: 'Terabecquerel', factor: 1e12 },
+      { id: 'Ci', label: 'Ci', name: 'Curie', factor: 3.7e10 },
+      { id: 'mCi', label: 'mCi', name: 'Millicurie', factor: 3.7e7 },
+      { id: 'uCi', label: 'μCi', name: 'Microcurie', factor: 3.7e4 },
+      { id: 'nCi', label: 'nCi', name: 'Nanocurie', factor: 3.7e1 },
+      { id: 'dpm', label: 'dpm', name: 'Decays per minute', factor: 1 / 60 },
+      { id: 'dps', label: 'dps', name: 'Decays per second', factor: 1 }
     ]
   }
 };
