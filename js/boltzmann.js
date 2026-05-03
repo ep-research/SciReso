@@ -1,6 +1,6 @@
 /* Boltzmann distribution: relative populations of quantum states at temperature T */
 
-window.SCIREPO_BOLTZMANN = (function () {
+window.SCIRESO_BOLTZMANN = (function () {
   'use strict';
 
   var K_B_CM = 0.695034800; // k_B in cm⁻¹/K (for E in cm⁻¹)
@@ -22,7 +22,7 @@ window.SCIREPO_BOLTZMANN = (function () {
     if (mode === 'rotational') {
       var B = params.B_cm;
       var maxJ = params.maxJ != null ? Math.max(0, Math.floor(params.maxJ)) : 20;
-      var SYM = window.SCIREPO_SYMBOLS;
+      var SYM = window.SCIRESO_SYMBOLS;
       var symB = SYM ? SYM.symbol('B_rot') : 'B_rot';
       if (B == null || isNaN(B) || B <= 0) {
         return { levels: [], error: 'Rotational constant ' + symB + ' must be positive (cm⁻¹).' };
@@ -37,7 +37,7 @@ window.SCIREPO_BOLTZMANN = (function () {
     } else if (mode === 'vibrational') {
       var omega = params.omega_cm;
       var maxV = params.maxV != null ? Math.max(0, Math.floor(params.maxV)) : 20;
-      var SYM = window.SCIREPO_SYMBOLS;
+      var SYM = window.SCIRESO_SYMBOLS;
       var symO = SYM ? SYM.symbol('omega_e') : 'omega_e';
       if (omega == null || isNaN(omega) || omega <= 0) {
         return { levels: [], error: 'Vibrational constant ' + symO + ' must be positive (cm⁻¹).' };

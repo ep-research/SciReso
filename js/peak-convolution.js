@@ -1,6 +1,6 @@
 /* Peak convolution: convoluted/deconvoluted FWHM for Gaussians, Lorentzians, Voigts */
 
-window.SCIREPO_PEAK_CONVOLUTION = (function () {
+window.SCIRESO_PEAK_CONVOLUTION = (function () {
   'use strict';
 
   function parseNum(val) {

@@ -13,7 +13,7 @@ window.SCIRESULTS_CONVERSION = {
     units: [
       { id: 'eV', label: 'eV', name: 'Electronvolts', factor: 1.602176634e-19 },
       { id: 'cm-1', label: 'cm⁻¹', name: 'Wavenumber', factor: h * c * 100 },
-      { id: 'nm', label: 'nm (' + (typeof window !== 'undefined' && window.SCIREPO_SYMBOLS ? window.SCIREPO_SYMBOLS.symbol('lambda') : 'lambda') + ')', name: 'Wavelength', factor: null, toBase: function (v) { return (hc * 1e9) / v; }, fromBase: function (E) { return (hc * 1e9) / E; } },
+      { id: 'nm', label: 'nm (' + (typeof window !== 'undefined' && window.SCIRESO_SYMBOLS ? window.SCIRESO_SYMBOLS.symbol('lambda') : 'lambda') + ')', name: 'Wavelength', factor: null, toBase: function (v) { return (hc * 1e9) / v; }, fromBase: function (E) { return (hc * 1e9) / E; } },
       { id: 'Ha', label: 'Hartree', name: 'Hartree', factor: 4.359744722e-18 },
       { id: 'Ry', label: 'Rydberg', name: 'Rydberg', factor: 2.179872361e-18 },
       { id: 'Hz', label: 'Hz', name: 'Hertz', factor: h },

@@ -1,6 +1,6 @@
 /* Synchrotron radiation: bending magnet, wiggler, undulator (basic scalings) */
 
-window.SCIREPO_SYNCHROTRON = (function () {
+window.SCIRESO_SYNCHROTRON = (function () {
   'use strict';
 
   var C = 2.99792458e8;        // m/s

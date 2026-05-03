@@ -1,6 +1,6 @@
 /* Particle: properties from mass (u) and kinetic energy (eV), trajectory in B or E field */
 
-window.SCIREPO_PARTICLE = (function () {
+window.SCIRESO_PARTICLE = (function () {
   'use strict';
 
   var C = 2.99792458e8;      // m/s

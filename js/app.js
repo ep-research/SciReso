@@ -3,7 +3,7 @@
 
   var CONV = window.SCIRESULTS_CONVERSION;
   var TEMP = window.SCIRESULTS_TEMP;
-  var S = window.SCIREPO_SYMBOLS || { symbol: function (id) { return id; }, symbolHtml: function (id) { return id; }, meaning: function (id) { return id; } };
+  var S = window.SCIRESO_SYMBOLS || { symbol: function (id) { return id; }, symbolHtml: function (id) { return id; }, meaning: function (id) { return id; } };
 
   function sqrtHtml(inner) {
     return '<span class="sqrt">√<span class="sqrt-inner">' + inner + '</span></span>';
@@ -23,12 +23,80 @@
     return trOpen + '<td class="input-desc">' + desc + '</td><td class="input-sym sym-quantity">' + (symHtml || '') + '</td><td class="input-val">' + valueHtml + '</td><td class="input-unit">' + (unitHtml || '') + '</td></tr>';
   }
 
+  /** Label on its own line, then choice buttons across the full width of the table (colspan 4). */
+  function inputChoiceSectionRow(desc, choiceHtml, rowId, labelId, trAttrs) {
+    var trCls = 'tool-input-choice-section';
+    var idAttr = rowId ? ' id="' + escapeAttr(rowId) + '"' : '';
+    var extra = trAttrs ? ' ' + trAttrs : '';
+    var labelIdAttr = labelId ? ' id="' + escapeAttr(labelId) + '"' : '';
+    return '<tr' + idAttr + ' class="' + trCls + '"' + extra + '>' +
+      '<td colspan="4" class="tool-input-choice-section-cell">' +
+      '<div class="tool-input-choice-section-label"' + labelIdAttr + '>' + desc + '</div>' +
+      choiceHtml +
+      '</td></tr>';
+  }
+
+  /** Colgroup fixes column widths when the first row uses colspan (e.g. choice sections). */
+  function toolInputTableOpen() {
+    return '<table class="tool-input-table"><colgroup><col class="tic-desc"><col class="tic-sym"><col class="tic-val"><col class="tic-unit"></colgroup><tbody>';
+  }
+
+  function escapeAttr(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  /** Segmented control for calculation choices (same styling as Results / Equations tabs). */
+  function inputChoiceButtonsHtml(inputId, choices, defaultValue, ariaLabel) {
+    var dv = defaultValue != null && defaultValue !== '' ? defaultValue : (choices[0] && choices[0].value);
+    var btns = choices.map(function (c) {
+      var active = c.value === dv ? ' is-active' : '';
+      return '<button type="button" class="tool-view-btn' + active + '" data-value="' + escapeAttr(c.value) + '">' + c.label + '</button>';
+    }).join('');
+    return '<div class="tool-input-choice-wrap">' +
+      '<div class="tool-view-buttons tool-input-choice-btns" data-choice-for="' + escapeAttr(inputId) + '"' +
+      (ariaLabel ? ' role="radiogroup" aria-label="' + escapeAttr(ariaLabel) + '"' : '') + '>' + btns + '</div>' +
+      '<input type="hidden" id="' + escapeAttr(inputId) + '" value="' + escapeAttr(dv) + '"></div>';
+  }
+
+  function choiceButtonsRoot() {
+    return document.getElementById('tool-inputs') || document;
+  }
+
+  function syncInputChoiceButtons(inputId) {
+    var hidden = document.getElementById(inputId);
+    var wrap = choiceButtonsRoot().querySelector('.tool-input-choice-btns[data-choice-for="' + inputId + '"]');
+    if (!hidden || !wrap) return;
+    var v = hidden.value;
+    wrap.querySelectorAll('.tool-view-btn[data-value]').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-value') === v);
+    });
+  }
+
+  function bindChoiceButtons(inputId, onChange) {
+    var hidden = document.getElementById(inputId);
+    var wrap = choiceButtonsRoot().querySelector('.tool-input-choice-btns[data-choice-for="' + inputId + '"]');
+    if (!hidden || !wrap) return;
+    function setVal(v) {
+      hidden.value = v;
+      syncInputChoiceButtons(inputId);
+      hidden.dispatchEvent(new Event('input', { bubbles: true }));
+      hidden.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof onChange === 'function') onChange(v);
+    }
+    wrap.addEventListener('click', function (e) {
+      var b = e.target.closest('.tool-view-btn[data-value]');
+      if (!b || !wrap.contains(b)) return;
+      setVal(b.getAttribute('data-value'));
+    });
+    syncInputChoiceButtons(inputId);
+  }
+
   function resultTable(rows, extraClass) {
     var cls = 'conversion-table absorption-table' + (extraClass ? ' ' + extraClass : '');
     return '<table class="' + cls + '"><tbody>' + (Array.isArray(rows) ? rows.join('') : rows) + '</tbody></table>';
   }
 
-  function plotControlsHtml(prefix, placeholder, idStyle, scaleButtons) {
+  function plotControlsHtml(prefix, placeholder, idStyle, scaleButtons, includeZControls) {
     placeholder = placeholder || 'auto';
     var xmin = idStyle === 'hyphen' ? prefix + '-x-min' : prefix + '-xmin';
     var xmax = idStyle === 'hyphen' ? prefix + '-x-max' : prefix + '-xmax';
@@ -40,7 +108,14 @@
       xRow += '<span class="plot-scale-btns" data-axis="x"><button type="button" class="plot-scale-btn is-active" data-scale="linear">Linear</button><button type="button" class="plot-scale-btn" data-scale="log">Log</button></span>';
       yRow += '<span class="plot-scale-btns" data-axis="y"><button type="button" class="plot-scale-btn is-active" data-scale="linear">Linear</button><button type="button" class="plot-scale-btn" data-scale="log">Log</button></span>';
     }
-    return xRow + '</span>' + yRow + '</span>';
+    var html = xRow + '</span>' + yRow + '</span>';
+    if (includeZControls && scaleButtons) {
+      var zmin = prefix + '-zmin';
+      var zmax = prefix + '-zmax';
+      html += '<span class="plot-control data-plot-z-controls" style="display:none;"><label>Z</label><input type="text" id="' + zmin + '" inputmode="decimal" placeholder="' + placeholder + '"><input type="text" id="' + zmax + '" inputmode="decimal" placeholder="' + placeholder + '">';
+      html += '<span class="plot-scale-btns" data-axis="z"><button type="button" class="plot-scale-btn is-active" data-scale="linear">Linear</button><button type="button" class="plot-scale-btn" data-scale="log">Log</button></span></span>';
+    }
+    return html;
   }
 
   function toolInputsHeaderHtml(resetButtonId) {
@@ -84,7 +159,8 @@
         html += '<div class="tool-plot-pane" data-plot="' + pane.dataPlot + '">';
         html += '<div id="' + pane.plotId + '" class="unified-plot-wrap"></div>';
         if (!pane.noControls) {
-          html += '<div class="plot-controls">' + plotControlsHtml(pane.controlsPrefix, pane.placeholder, pane.idStyle, pane.scaleButtons) + '</div>';
+          html += '<div class="plot-controls">' + plotControlsHtml(pane.controlsPrefix, pane.placeholder, pane.idStyle, pane.scaleButtons, pane.includeZControls) +
+            (pane.extraControlsHtml || '') + '</div>';
         }
         html += '</div>';
       });
@@ -154,7 +230,7 @@
   var tools = {
     about: {
       inputs: '<div class="about-description">' +
-        '<p>SCIREPO — The science repository.</p>' +
+        '<p>SCIRESO — Science resources.</p>' +
         '<p>Online tools and calculators for scientists.</p>' +
         '</div>',
       results: '<div class="about-content about-columns">' +
@@ -245,7 +321,7 @@
   var menuToggle = document.querySelector('.menu-toggle');
   var currentToolId = null;
 
-  var THEME = window.SCIREPO_THEME || {};
+  var THEME = window.SCIRESO_THEME || {};
   var PLOT = THEME.PLOT || {};
   var TABLE = THEME.TABLE || {};
   var PLOT_SIZE = PLOT.size || {};
@@ -287,9 +363,24 @@
   var DATA_PLOT_LINE_DASHES = [[], [6, 4], [2, 3], [8, 3, 2, 3], [12, 5]];
   var DATA_PLOT_MARKER_RADIUS = 4;
 
+  /** Copy theme/accent from pre-rename localStorage keys (SCIREPO → SCIRESO). */
+  function migrateScirepoLocalStorageToScireso() {
+    try {
+      if (!localStorage.getItem('scireso-theme')) {
+        var oldT = localStorage.getItem('scirepo-theme');
+        if (oldT) localStorage.setItem('scireso-theme', oldT);
+      }
+      if (!localStorage.getItem('scireso-accent')) {
+        var oldA = localStorage.getItem('scirepo-accent');
+        if (oldA) localStorage.setItem('scireso-accent', oldA);
+      }
+    } catch (e) { /* ignore */ }
+  }
+  migrateScirepoLocalStorageToScireso();
+
   function applyStoredAccent() {
     try {
-      var stored = localStorage.getItem('scirepo-accent');
+      var stored = localStorage.getItem('scireso-accent');
       if (stored) {
         for (var i = 0; i < ACCENT_PRESETS.length; i++) {
           if (ACCENT_PRESETS[i].id === stored) {
@@ -317,13 +408,13 @@
     var rootStyle = document.documentElement && document.documentElement.style;
     if (rootStyle) rootStyle.setProperty('--range-input-bg', c.bg || '#0d0d0d');
     applyStoredAccent();
-    try { localStorage.setItem('scirepo-theme', theme); } catch (e) { /* ignore */ }
+    try { localStorage.setItem('scireso-theme', theme); } catch (e) { /* ignore */ }
     refreshCurrentTool();
   }
 
   function applyStoredTheme() {
     var theme = 'dark';
-    try { theme = localStorage.getItem('scirepo-theme') || 'dark'; } catch (e) { /* ignore */ }
+    try { theme = localStorage.getItem('scireso-theme') || 'dark'; } catch (e) { /* ignore */ }
     if (theme !== 'light') theme = 'dark';
     document.body.setAttribute('data-theme', theme);
     var c = THEMES[theme] || THEMES.dark;
@@ -345,7 +436,7 @@
       if (ACCENT_PRESETS[i].id === presetId) {
         PLOT_ACCENT = ACCENT_PRESETS[i].accent;
         PLOT_ACCENT_ALPHA = ACCENT_PRESETS[i].accentAlpha;
-        try { localStorage.setItem('scirepo-accent', presetId); } catch (e) { /* ignore */ }
+        try { localStorage.setItem('scireso-accent', presetId); } catch (e) { /* ignore */ }
         refreshCurrentTool();
         return;
       }
@@ -474,7 +565,8 @@
     var formatYTick = typeof opts.formatYTick === 'function' ? opts.formatYTick : formatPlotNum;
     var drawData = typeof opts.drawData === 'function' ? opts.drawData : function () {};
     var afterClip = typeof opts.afterClip === 'function' ? opts.afterClip : null;
-    var pad = PAD_LARGE;
+    var suppressMajorGrid = opts.suppressMajorGrid === true;
+    var pad = { L: PAD_LARGE.L, R: PAD_LARGE.R + (opts.extraPadR || 0), T: PAD_LARGE.T, B: PAD_LARGE.B };
     var size = getPlotSize(container, PLOT_SLOT.cw, PLOT_SLOT.ch);
     var cw = size.cw;
     var ch = size.ch;
@@ -578,7 +670,7 @@
       ctx.stroke();
       ctx.fillText(formatYTick(v), pad.L - 8, gy + 4);
     });
-    if (plotGridVisible) {
+    if (plotGridVisible && !suppressMajorGrid) {
       ctx.strokeStyle = 'rgba(128,128,128,0.12)';
       ctx.lineWidth = 1;
       xt.majors.forEach(function (v) {
@@ -618,11 +710,12 @@
   }
 
   function renderUnitConversionInputs() {
-    var qOpts = Object.keys(CONV).map(function (key) {
-      return '<option value="' + key + '">' + (quantityLabels[key] || key) + '</option>';
-    }).join('');
-    return '<table class="tool-input-table"><tbody>' +
-      inputRow('Quantity', '', '<select id="uc-quantity">' + qOpts + '</select>', '') +
+    var ucQtyChoices = Object.keys(CONV).map(function (key) {
+      return { value: key, label: quantityLabels[key] || key };
+    });
+    var ucDefaultQty = ucQtyChoices[0] ? ucQtyChoices[0].value : 'energy';
+    return toolInputTableOpen() +
+      inputChoiceSectionRow('Quantity', inputChoiceButtonsHtml('uc-quantity', ucQtyChoices, ucDefaultQty, 'Quantity')) +
       inputRow('Value', '<span id="uc-symbol-cell"></span>', '<input type="text" id="uc-value" inputmode="decimal" placeholder="Number" value="1">', '<select id="uc-unit"></select>') +
       '</tbody></table>';
   }
@@ -660,7 +753,7 @@
     var quantityEl = document.getElementById('uc-quantity');
     var unitEl = document.getElementById('uc-unit');
     var valueEl = document.getElementById('uc-value');
-    var quantityId = quantityEl ? (quantityEl.value || quantityEl.options[0] && quantityEl.options[0].value) : '';
+    var quantityId = quantityEl ? quantityEl.value : '';
     var unitId = unitEl ? (unitEl.value || unitEl.options[0] && unitEl.options[0].value) : '';
     var valueStr = valueEl && valueEl.value != null ? String(valueEl.value).trim() : '';
     var tableHtml;
@@ -732,11 +825,11 @@
       equationsHtml: ucEquationsHtml
     });
     var qEl = document.getElementById('uc-quantity');
-    if (qEl) fillUnitSelect(qEl.value || 'energy');
+    if (qEl) fillUnitSelect(qEl.value || (Object.keys(CONV)[0] || 'energy'));
     runConversion();
     setTimeout(function () { runConversion(); }, 0);
-    document.getElementById('uc-quantity').addEventListener('change', function () {
-      fillUnitSelect(this.value);
+    bindChoiceButtons('uc-quantity', function () {
+      fillUnitSelect(document.getElementById('uc-quantity').value);
       runConversion();
     });
     bindInputsToRun(['uc-unit', 'uc-value'], runConversion);
@@ -830,17 +923,21 @@
 
   function initChemicalSolution() {
     var CS = window.SCIRESULTS_CS;
-    var typeOpts = Object.keys(CS.concTypes).map(function (k) { return '<option value="' + k + '">' + CS.concTypes[k].label + '</option>'; }).join('');
+    var csConcChoices = Object.keys(CS.concTypes).map(function (k) { return { value: k, label: CS.concTypes[k].label }; });
     var molarRow = '<tr id="cs-molar-mass-row"><td class="input-desc">Molar mass</td><td class="input-sym sym-quantity">M</td><td class="input-val"><input type="text" id="cs-molar-mass" inputmode="decimal" placeholder="g/mol" value="58.44"></td><td class="input-unit">g/mol</td></tr>';
     var rhoSoluteRow = '<tr id="cs-rho-solute-row"><td class="input-desc">Solute density</td><td class="input-sym sym-quantity">' + S.symbolHtml('rho') + '</td><td class="input-val"><input type="text" id="cs-rho-solute" inputmode="decimal" placeholder="g/mL" value="1"></td><td class="input-unit">g/mL</td></tr>';
     var rhoSolutionRow = '<tr id="cs-rho-solution-row"><td class="input-desc">Solution density</td><td class="input-sym sym-quantity">' + S.symbolHtml('rho') + '</td><td class="input-val"><input type="text" id="cs-rho-solution" inputmode="decimal" placeholder="g/mL" value="1"></td><td class="input-unit">g/mL</td></tr>';
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('cs-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Source', '', '<select id="cs-source"><option value="solid" selected>Solid solute</option><option value="liquid">Pure liquid solute</option><option value="stock">From stock solution</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Source', inputChoiceButtonsHtml('cs-source', [
+        { value: 'solid', label: 'Solid solute' },
+        { value: 'liquid', label: 'Pure liquid solute' },
+        { value: 'stock', label: 'From stock solution' }
+      ], 'solid', 'Source')) +
       '<tr id="cs-stock-row" style="display:none"><td class="input-desc">Stock concentration</td><td class="input-sym"></td><td class="input-val"><input type="text" id="cs-stock-value" inputmode="decimal" placeholder="e.g. 1" value="1"></td><td class="input-unit"><select id="cs-stock-unit"></select></td></tr>' +
       molarRow + rhoSoluteRow + rhoSolutionRow +
-      inputRow('Concentration type', '', '<select id="cs-conc-type">' + typeOpts + '</select>', '') +
+      inputChoiceSectionRow('Concentration type', inputChoiceButtonsHtml('cs-conc-type', csConcChoices, csConcChoices[0] && csConcChoices[0].value, 'Concentration type')) +
       inputRow('Target concentration', '', '<input type="text" id="cs-conc" inputmode="decimal" placeholder="e.g. 1" value="1">', '<select id="cs-conc-unit"></select>') +
       inputRow('Target volume or mass', '', '<input type="text" id="cs-target" inputmode="decimal" placeholder="e.g. 100" value="100">', '<select id="cs-target-unit"></select>') +
       '</tbody></table></div>';
@@ -851,9 +948,9 @@
       equationsHtml: csDefaultEq
     });
     updateCsKnowns();
-    bindInputsToRun(['cs-source', 'cs-conc-type', 'cs-conc', 'cs-target', 'cs-stock-value'], runChemicalSolution);
-    document.getElementById('cs-source').addEventListener('change', updateCsKnowns);
-    document.getElementById('cs-conc-type').addEventListener('change', updateCsKnowns);
+    bindChoiceButtons('cs-source', updateCsKnowns);
+    bindChoiceButtons('cs-conc-type', updateCsKnowns);
+    bindInputsToRun(['cs-conc', 'cs-target', 'cs-stock-value'], runChemicalSolution);
     bindInputsChange(['cs-conc-unit', 'cs-target-unit', 'cs-stock-unit'], runChemicalSolution);
     var csReset = document.getElementById('cs-reset-defaults');
     if (csReset) csReset.addEventListener('click', initChemicalSolution);
@@ -1068,7 +1165,24 @@
     var xMax = (xMaxEl && xMaxEl.value.trim() !== '') ? parseFloat(xMaxEl.value.replace(/,/g, '')) : null;
     var yMin = (yMinEl && yMinEl.value.trim() !== '') ? parseFloat(yMinEl.value.replace(/,/g, '')) : null;
     var yMax = (yMaxEl && yMaxEl.value.trim() !== '') ? parseFloat(yMaxEl.value.replace(/,/g, '')) : null;
-    return { xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax };
+    var out = { xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax };
+    var zMinEl = document.getElementById(prefix + '-zmin');
+    var zMaxEl = document.getElementById(prefix + '-zmax');
+    if (zMinEl && zMaxEl) {
+      out.zMin = (zMinEl.value.trim() !== '') ? parseFloat(zMinEl.value.replace(/,/g, '')) : null;
+      out.zMax = (zMaxEl.value.trim() !== '') ? parseFloat(zMaxEl.value.replace(/,/g, '')) : null;
+    }
+    return out;
+  }
+
+  function syncAbsorptionDeriveInputRows() {
+    var derive = (document.getElementById('abs-derive') && document.getElementById('abs-derive').value) || 'concentration';
+    var rd = document.getElementById('abs-row-density');
+    var rm = document.getElementById('abs-row-molar-mass');
+    var rc = document.getElementById('abs-row-concentration');
+    if (rd) rd.style.display = derive === 'density' ? 'none' : '';
+    if (rm) rm.style.display = derive === 'molarMass' ? 'none' : '';
+    if (rc) rc.style.display = derive === 'concentration' ? 'none' : '';
   }
 
   function runAbsorption() {
@@ -1081,6 +1195,7 @@
     var coefType = (document.getElementById('abs-coef-type') && document.getElementById('abs-coef-type').value) || 'linear';
     var thicknessUnit = (document.getElementById('abs-thickness-unit') && document.getElementById('abs-thickness-unit').value) || 'um';
     var derive = (document.getElementById('abs-derive') && document.getElementById('abs-derive').value) || 'concentration';
+    syncAbsorptionDeriveInputRows();
     ['abs-density', 'abs-molar-mass', 'abs-concentration'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.disabled = (id === 'abs-density' && derive === 'density') || (id === 'abs-molar-mass' && derive === 'molarMass') || (id === 'abs-concentration' && derive === 'concentration');
@@ -1118,19 +1233,24 @@
       if (!isNaN(yMin) && !isNaN(yMax) && yMax > yMin) { out.yMin = yMin; out.yMax = yMax; }
       return Object.keys(out).length ? out : null;
     };
+    var lambdaCm = (r.alpha_per_cm != null && !isNaN(r.alpha_per_cm) && r.alpha_per_cm > 0) ? 1 / r.alpha_per_cm : NaN;
+    var lambdaDisp = (!isNaN(lambdaCm) && isFinite(lambdaCm)) ? cmToThicknessUnit(lambdaCm, thicknessUnit) : NaN;
+    var lambdaUnitLabel = thicknessUnitLabel(thicknessUnit);
     var rows = [
       resultRowValUnit('Intensity ratio (transmitted / incident)', S.symbolHtml('I') + '/' + S.symbolHtml('I0'), r.I_I0, r.I_I0 != null && !isNaN(r.I_I0), ''),
       resultRowValUnit('Napierian absorbance', '−ln(' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ')', r.A_nap, r.A_nap != null && !isNaN(r.A_nap), ''),
       resultRowValUnit('Decadic absorbance', '−log₁₀(' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ')', r.A_dec, r.A_dec != null && !isNaN(r.A_dec), ''),
       resultRowValUnit(S.meaning('alpha'), S.symbolHtml('alpha'), r.alpha_per_cm, r.alpha_per_cm != null && !isNaN(r.alpha_per_cm) && r.alpha_per_cm >= 0, 'cm⁻¹'),
+      resultRowValUnit(S.meaning('lambda_mfp'), S.symbolHtml('lambda_mfp'), lambdaDisp, !isNaN(lambdaDisp) && isFinite(lambdaDisp), lambdaUnitLabel),
       resultRowValUnit(S.meaning('a'), S.symbolHtml('a'), r.a_mass, r.a_mass != null && !isNaN(r.a_mass) && r.a_mass >= 0, 'cm²/g'),
       resultRowValUnit(S.meaning('epsilon'), S.symbolHtml('epsilon'), r.epsilon, r.epsilon != null && !isNaN(r.epsilon) && r.epsilon >= 0, 'L/(mol·cm)'),
       resultRowValUnit(S.meaning('sigma'), S.symbolHtml('sigma'), r.sigma_cm2, r.sigma_cm2 != null && !isNaN(r.sigma_cm2) && r.sigma_cm2 >= 0, 'cm²')
     ];
-    var formulaHtml = '<p class="tool-formula">' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ' = e<sup>−' + S.symbolHtml('alpha') + S.symbolHtml('L') + '</sup> (Beer–Lambert)</p>' +
+    var formulaHtml = '<p class="tool-formula">' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ' = e<sup>−' + S.symbolHtml('alpha') + S.symbolHtml('L') + '</sup> = e<sup>−' + S.symbolHtml('L') + '/' + S.symbolHtml('lambda_mfp') + '</sup> (Beer–Lambert)</p>' +
+      '<p class="tool-formula">' + S.symbolHtml('alpha') + ' = 1/' + S.symbolHtml('lambda_mfp') + ' (mean free path)</p>' +
       '<p class="tool-formula">A<sub>nap</sub> = −ln(' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ') = ' + S.symbolHtml('alpha') + S.symbolHtml('L') + '</p>' +
       '<p class="tool-formula">A<sub>dec</sub> = −log₁₀(' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ')</p>' +
-      '<p class="tool-formula">' + S.symbolHtml('alpha') + ' (linear), ' + S.symbolHtml('a') + ' (mass), ' + S.symbolHtml('epsilon') + ' (molar); ' + S.symbolHtml('sigma') + ' = ' + S.symbolHtml('alpha') + '/c (cross section)</p>';
+      '<p class="tool-formula">' + S.symbolHtml('alpha') + ' (linear), ' + S.symbolHtml('lambda_mfp') + ' (mean free path), ' + S.symbolHtml('a') + ' (mass), ' + S.symbolHtml('epsilon') + ' (molar); ' + S.symbolHtml('sigma') + ' = ' + S.symbolHtml('alpha') + '/c (cross section)</p>';
     var tableHtml = resultTable(rows);
     var resultsContent = document.getElementById('abs-results');
     var equationsContent = toolResultsEl && toolResultsEl.querySelector('.tool-equations-content');
@@ -1165,10 +1285,12 @@
     var sel = document.getElementById('abs-coef-unit');
     if (sel) {
       if (t === 'linear') sel.innerHTML = '<option value="per_cm">cm⁻¹</option><option value="per_mm">mm⁻¹</option><option value="per_m">m⁻¹</option>';
+      else if (t === 'mfp') sel.innerHTML = '<option value="cm">cm</option><option value="mm">mm</option><option value="um">μm</option><option value="nm" selected>nm</option>';
       else if (t === 'mass') sel.innerHTML = '<option value="cm2/g">cm²/g</option><option value="m2/kg">m²/kg</option>';
       else sel.innerHTML = '<option value="L/(mol·cm)">L/(mol·cm)</option>';
+      if (t === 'mfp') sel.value = 'nm';
     }
-    var symId = t === 'linear' ? 'alpha' : t === 'mass' ? 'a' : 'epsilon';
+    var symId = t === 'linear' ? 'alpha' : t === 'mfp' ? 'lambda_mfp' : t === 'mass' ? 'a' : 'epsilon';
     var symEl = document.getElementById('abs-coef-symbol');
     if (symEl) symEl.innerHTML = S.symbolHtml(symId);
     runAbsorption();
@@ -1177,19 +1299,29 @@
   function initAbsorption() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('abs-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Coefficient type', '', '<select id="abs-coef-type"><option value="linear">Linear (' + S.symbolHtml('alpha') + ')</option><option value="mass">Mass (' + S.symbolHtml('a') + ')</option><option value="molar">Molar (' + S.symbolHtml('epsilon') + ')</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Coefficient type', inputChoiceButtonsHtml('abs-coef-type', [
+        { value: 'linear', label: 'Linear (' + S.symbolHtml('alpha') + ')' },
+        { value: 'mass', label: 'Mass (' + S.symbolHtml('a') + ')' },
+        { value: 'molar', label: 'Molar (' + S.symbolHtml('epsilon') + ')' },
+        { value: 'mfp', label: 'Mean free path (' + S.symbolHtml('lambda_mfp') + ')' }
+      ], 'linear', 'Coefficient type')) +
       inputRow('Coefficient value', '<span id="abs-coef-symbol">' + S.symbolHtml('alpha') + '</span>', '<input type="text" id="abs-coef-value" inputmode="decimal" placeholder="e.g. 10000" value="10000">', '<select id="abs-coef-unit"></select>') +
       inputRow(S.meaning('L'), S.symbolHtml('L'), '<input type="text" id="abs-thickness" inputmode="decimal" placeholder="e.g. 1" value="1">', '<select id="abs-thickness-unit"><option value="cm">cm</option><option value="mm">mm</option><option value="um" selected>μm</option><option value="nm">nm</option></select>') +
-      inputRow('Derive', '', '<select id="abs-derive"><option value="concentration" selected>Concentration (from ρ, M)</option><option value="molarMass">Molar mass (from ρ, c)</option><option value="density">Density (from M, c)</option></select>', '') +
-      inputRow('Density', '', '<input type="text" id="abs-density" inputmode="decimal" placeholder="optional" value="1">', 'g/cm³') +
-      inputRow('Molar mass', '', '<input type="text" id="abs-molar-mass" inputmode="decimal" placeholder="optional" value="58.44">', 'g/mol') +
-      inputRow('Concentration', '', '<input type="text" id="abs-concentration" inputmode="decimal" placeholder="optional" value="0.1">', 'mol/L') +
+      inputChoiceSectionRow('Derive', inputChoiceButtonsHtml('abs-derive', [
+        { value: 'concentration', label: 'Concentration (from ρ, M)' },
+        { value: 'molarMass', label: 'Molar mass (from ρ, c)' },
+        { value: 'density', label: 'Density (from M, c)' }
+      ], 'concentration', 'Derive')) +
+      inputRow('Density', '', '<input type="text" id="abs-density" inputmode="decimal" placeholder="optional" value="1">', 'g/cm³', 'abs-row-density') +
+      inputRow('Molar mass', '', '<input type="text" id="abs-molar-mass" inputmode="decimal" placeholder="optional" value="58.44">', 'g/mol', 'abs-row-molar-mass') +
+      inputRow('Concentration', '', '<input type="text" id="abs-concentration" inputmode="decimal" placeholder="optional" value="0.1">', 'mol/L', 'abs-row-concentration') +
       '</tbody></table></div>';
-    var absFormulaHtml = '<p class="tool-formula">' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ' = e<sup>−' + S.symbolHtml('alpha') + S.symbolHtml('L') + '</sup> (Beer–Lambert)</p>' +
+    var absFormulaHtml = '<p class="tool-formula">' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ' = e<sup>−' + S.symbolHtml('alpha') + S.symbolHtml('L') + '</sup> = e<sup>−' + S.symbolHtml('L') + '/' + S.symbolHtml('lambda_mfp') + '</sup> (Beer–Lambert)</p>' +
+      '<p class="tool-formula">' + S.symbolHtml('alpha') + ' = 1/' + S.symbolHtml('lambda_mfp') + ' (mean free path)</p>' +
       '<p class="tool-formula">A<sub>nap</sub> = −ln(' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ') = ' + S.symbolHtml('alpha') + S.symbolHtml('L') + '</p>' +
       '<p class="tool-formula">A<sub>dec</sub> = −log₁₀(' + S.symbolHtml('I') + '/' + S.symbolHtml('I0') + ')</p>' +
-      '<p class="tool-formula">' + S.symbolHtml('alpha') + ' (linear), ' + S.symbolHtml('a') + ' (mass), ' + S.symbolHtml('epsilon') + ' (molar); ' + S.symbolHtml('sigma') + ' = ' + S.symbolHtml('alpha') + '/c (cross section)</p>';
+      '<p class="tool-formula">' + S.symbolHtml('alpha') + ' (linear), ' + S.symbolHtml('lambda_mfp') + ' (mean free path), ' + S.symbolHtml('a') + ' (mass), ' + S.symbolHtml('epsilon') + ' (molar); ' + S.symbolHtml('sigma') + ' = ' + S.symbolHtml('alpha') + '/c (cross section)</p>';
     toolResultsEl.innerHTML = buildToolResultsPanel({
       viewButtons: [
         { view: 'results', label: 'Results' },
@@ -1207,7 +1339,8 @@
       ]
     });
     updateAbsorptionUnits();
-    document.getElementById('abs-coef-type').addEventListener('change', updateAbsorptionUnits);
+    bindChoiceButtons('abs-coef-type', updateAbsorptionUnits);
+    bindChoiceButtons('abs-derive');
     bindInputsToRun(['abs-coef-value', 'abs-thickness', 'abs-density', 'abs-molar-mass', 'abs-concentration', 'abs-derive', 'abs-x-min', 'abs-x-max', 'abs-y-min', 'abs-y-max', 'abs-nap-x-min', 'abs-nap-x-max', 'abs-nap-y-min', 'abs-nap-y-max', 'abs-dec-x-min', 'abs-dec-x-max', 'abs-dec-y-min', 'abs-dec-y-max', 'plot-aspect-ratio'], runAbsorption);
     bindInputsChange(['abs-coef-unit', 'abs-thickness-unit'], runAbsorption);
     bindScaleButtonsInPanel(runAbsorption);
@@ -1726,7 +1859,7 @@
   }
 
   function runParticle() {
-    var PART = window.SCIREPO_PARTICLE;
+    var PART = window.SCIRESO_PARTICLE;
     if (!PART) return;
     var resultsContent = document.getElementById('part-results');
     var plotContainer = document.getElementById('part-plot');
@@ -1859,19 +1992,22 @@
   }
 
   function initParticle() {
-    var PART = window.SCIREPO_PARTICLE;
+    var PART = window.SCIRESO_PARTICLE;
     if (!PART) return;
-    var opts = PART.COMMON_PARTICLES.map(function (p) {
-      return '<option value="' + p.id + '">' + p.label + '</option>';
-    }).join('');
+    var partChoices = PART.COMMON_PARTICLES.map(function (p) {
+      return { value: p.id, label: p.label };
+    });
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('part-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Particle', '', '<select id="part-type">' + opts + '</select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Particle', inputChoiceButtonsHtml('part-type', partChoices, partChoices[0] && partChoices[0].value, 'Particle')) +
       '<tr id="part-custom-wrap" style="display:none"><td class="input-desc">' + S.meaning('m') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('m') + '</td><td class="input-val"><input type="text" id="part-mass" inputmode="decimal" placeholder="e.g. 1" value="1"></td><td class="input-unit">u</td></tr>' +
       '<tr id="part-charge-row" style="display:none"><td class="input-desc">' + S.meaning('q') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('q') + '</td><td class="input-val"><input type="text" id="part-charge" inputmode="decimal" placeholder="e.g. 1" value="1"></td><td class="input-unit">e</td></tr>' +
       inputRow(S.meaning('E_k'), S.symbolHtml('E_k'), '<input type="text" id="part-ke" inputmode="decimal" placeholder="e.g. 1000" value="1000">', 'eV') +
-      inputRow('Field', '', '<select id="part-field-type"><option value="B">B (magnetic)</option><option value="E">E (electric)</option></select>', '') +
+      inputChoiceSectionRow('Field', inputChoiceButtonsHtml('part-field-type', [
+        { value: 'B', label: 'B (magnetic)' },
+        { value: 'E', label: 'E (electric)' }
+      ], 'B', 'Field')) +
       inputRow('Field value', '<span id="part-field-symbol">' + S.symbolHtml('B') + '</span>', '<input type="text" id="part-field-val" inputmode="decimal" placeholder="B in T or E in V/m" value="1">', 'T / V/m') +
       '</tbody></table></div>';
     var partFormulaHtml = '<p class="tool-formula">' + S.symbolHtml('E') + ' = ' + S.symbolHtml('gamma') + 'm' + S.symbolHtml('m') + 'c²</p><p class="tool-formula">' + S.symbolHtml('p') + ' = ' + S.symbolHtml('gamma') + 'm' + S.symbolHtml('v') + '</p><p class="tool-formula">' + S.symbolHtml('lambda_dB') + ' = h / ' + S.symbolHtml('p') + ' (De Broglie)</p>';
@@ -1882,24 +2018,18 @@
       plotPanes: [{ dataPlot: 'plot', plotId: 'part-plot', controlsPrefix: 'part-plot', scaleButtons: true }]
     });
     runParticle();
-    var typeEl = document.getElementById('part-type');
-    if (typeEl) {
-      typeEl.addEventListener('change', function () {
-        var isCustom = typeEl.value === 'custom';
-        var wrap = document.getElementById('part-custom-wrap');
-        var chargeRow = document.getElementById('part-charge-row');
-        if (wrap) wrap.style.display = isCustom ? '' : 'none';
-        if (chargeRow) chargeRow.style.display = isCustom ? '' : 'none';
-        runParticle();
-      });
-    }
-    var fieldTypeEl = document.getElementById('part-field-type');
-    if (fieldTypeEl) {
-      fieldTypeEl.addEventListener('change', function () {
-        var symEl = document.getElementById('part-field-symbol');
-        if (symEl) symEl.innerHTML = fieldTypeEl.value === 'E' ? S.symbolHtml('E_f') : S.symbolHtml('B');
-      });
-    }
+    bindChoiceButtons('part-type', function (v) {
+      var isCustom = v === 'custom';
+      var wrap = document.getElementById('part-custom-wrap');
+      var chargeRow = document.getElementById('part-charge-row');
+      if (wrap) wrap.style.display = isCustom ? '' : 'none';
+      if (chargeRow) chargeRow.style.display = isCustom ? '' : 'none';
+      runParticle();
+    });
+    bindChoiceButtons('part-field-type', function (v) {
+      var symEl = document.getElementById('part-field-symbol');
+      if (symEl) symEl.innerHTML = v === 'E' ? S.symbolHtml('E_f') : S.symbolHtml('B');
+    });
     bindInputsToRun(['part-mass', 'part-charge', 'part-ke', 'part-field-type', 'part-field-val', 'part-plot-xmin', 'part-plot-xmax', 'part-plot-ymin', 'part-plot-ymax', 'plot-aspect-ratio'], runParticle);
     bindScaleButtonsInPanel(runParticle);
     bindPlotGridButton(runParticle);
@@ -1908,7 +2038,7 @@
   }
 
   function runBoltzmann() {
-    var BOLT = window.SCIREPO_BOLTZMANN;
+    var BOLT = window.SCIRESO_BOLTZMANN;
     if (!BOLT) return;
     var resultsContent = document.getElementById('boltzmann-results');
     var plotContainer = document.getElementById('boltzmann-plot');
@@ -1960,12 +2090,16 @@
   }
 
   function initBoltzmann() {
-    var BOLT = window.SCIREPO_BOLTZMANN;
+    var BOLT = window.SCIRESO_BOLTZMANN;
     if (!BOLT) return;
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('boltzmann-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Mode', '', '<select id="boltzmann-mode"><option value="rotational">Rotational</option><option value="vibrational">Vibrational</option><option value="generic">Generic</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Mode', inputChoiceButtonsHtml('boltzmann-mode', [
+        { value: 'rotational', label: 'Rotational' },
+        { value: 'vibrational', label: 'Vibrational' },
+        { value: 'generic', label: 'Generic' }
+      ], 'rotational', 'Mode')) +
       inputRow(S.meaning('T'), S.symbolHtml('T'), '<input type="text" id="boltzmann-T" inputmode="decimal" placeholder="e.g. 300" value="300">', 'K') +
       '<tr id="boltzmann-rot"><td class="input-desc">' + S.meaning('B_rot') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('B_rot') + '</td><td class="input-val"><input type="text" id="boltzmann-B" inputmode="decimal" placeholder="e.g. 2" value="2"></td><td class="input-unit">cm⁻¹</td></tr>' +
       '<tr id="boltzmann-maxj-row"><td class="input-desc">Max J</td><td class="input-sym"></td><td class="input-val"><input type="text" id="boltzmann-maxJ" inputmode="decimal" placeholder="20" value="20"></td><td class="input-unit"></td></tr>' +
@@ -1995,7 +2129,7 @@
       if (genDiv) genDiv.style.display = m === 'generic' ? '' : 'none';
       runBoltzmann();
     }
-    if (modeEl) modeEl.addEventListener('change', toggleMode);
+    bindChoiceButtons('boltzmann-mode', toggleMode);
     bindInputsToRun(['boltzmann-T', 'boltzmann-B', 'boltzmann-maxJ', 'boltzmann-omega', 'boltzmann-maxV', 'boltzmann-levels', 'boltzmann-plot-xmin', 'boltzmann-plot-xmax', 'boltzmann-plot-ymin', 'boltzmann-plot-ymax', 'plot-aspect-ratio'], runBoltzmann);
     bindScaleButtonsInPanel(runBoltzmann);
     bindPlotGridButton(runBoltzmann);
@@ -2067,7 +2201,7 @@
   }
 
   function runPhotoionization() {
-    var PI = window.SCIREPO_PHOTOIONIZATION;
+    var PI = window.SCIRESO_PHOTOIONIZATION;
     if (!PI) return;
     var resultsContent = document.getElementById('pi-results');
     var plotContainer = document.getElementById('pi-plot');
@@ -2114,7 +2248,7 @@
   }
 
   function drawPhotoionizationAngular(container) {
-    var PI = window.SCIREPO_PHOTOIONIZATION;
+    var PI = window.SCIRESO_PHOTOIONIZATION;
     if (!PI || !container) return;
     var betaEl = document.getElementById('pi-beta');
     var beta = (betaEl && betaEl.value.trim() !== '') ? PI.parseNum(betaEl.value) : 0;
@@ -2165,7 +2299,7 @@
   }
 
   function drawPhotoionizationLineshape(container, r) {
-    var PI = window.SCIREPO_PHOTOIONIZATION;
+    var PI = window.SCIRESO_PHOTOIONIZATION;
     if (!PI || !container) return;
     r = r || {};
     var KE_center = (r.KE_after_PCI_and_recoil_eV != null && isFinite(r.KE_after_PCI_and_recoil_eV)) ? r.KE_after_PCI_and_recoil_eV : (r.KE_after_PCI_eV != null && isFinite(r.KE_after_PCI_eV)) ? r.KE_after_PCI_eV : (r.KE_eV != null && isFinite(r.KE_eV)) ? r.KE_eV : 500;
@@ -2244,11 +2378,11 @@
   }
 
   function initPhotoionization() {
-    var PI = window.SCIREPO_PHOTOIONIZATION;
+    var PI = window.SCIRESO_PHOTOIONIZATION;
     if (!PI) return;
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('pi-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
+      toolInputTableOpen() +
       inputRow('Photon energy', S.symbolHtml('E'), '<input type="text" id="pi-Ephoton" inputmode="decimal" placeholder="e.g. 1000" value="1000">', 'eV') +
       inputRow('Binding energy', S.symbolHtml('E_bind'), '<input type="text" id="pi-Ebinding" inputmode="decimal" placeholder="e.g. 500" value="500">', 'eV') +
       inputRow('Mass (optional)', S.symbolHtml('m'), '<input type="text" id="pi-mass" inputmode="decimal" placeholder="e.g. 16" value="16">', 'u') +
@@ -2280,7 +2414,7 @@
   }
 
   function runCompton() {
-    var COM = window.SCIREPO_COMPTON;
+    var COM = window.SCIRESO_COMPTON;
     if (!COM) return;
     var resultsContent = document.getElementById('compton-results');
     var plotContainer = document.getElementById('compton-plot');
@@ -2319,7 +2453,7 @@
   }
 
   function drawComptonPlot(container) {
-    var COM = window.SCIREPO_COMPTON;
+    var COM = window.SCIRESO_COMPTON;
     if (!COM || !container) return;
     var E_incident = COM.parseNum(document.getElementById('compton-E') && document.getElementById('compton-E').value);
     var xMinEl = document.getElementById('compton-plot-xmin');
@@ -2377,11 +2511,11 @@
   }
 
   function initCompton() {
-    var COM = window.SCIREPO_COMPTON;
+    var COM = window.SCIRESO_COMPTON;
     if (!COM) return;
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('compton-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
+      toolInputTableOpen() +
       inputRow('Incident photon energy', S.symbolHtml('E'), '<input type="text" id="compton-E" inputmode="decimal" placeholder="e.g. 100000" value="100000">', 'eV') +
       inputRow('Scattering angle', S.symbolHtml('theta'), '<input type="text" id="compton-theta" inputmode="decimal" placeholder="e.g. 90" value="90">', 'deg') +
       '</tbody></table></div>';
@@ -2400,7 +2534,7 @@
   }
 
   function runBlackbody() {
-    var BB = window.SCIREPO_BLACKBODY;
+    var BB = window.SCIRESO_BLACKBODY;
     if (!BB) return;
     var resultsContent = document.getElementById('bb-results');
     var plotContainer = document.getElementById('bb-plot');
@@ -2423,7 +2557,7 @@
   }
 
   function drawBlackbodySpectrum(container, T_K) {
-    var BB = window.SCIREPO_BLACKBODY;
+    var BB = window.SCIRESO_BLACKBODY;
     if (!BB || !container) return;
     var hasData = T_K > 0 && isFinite(T_K);
     var xMin = 100;
@@ -2501,7 +2635,7 @@
   function initBlackbody() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('bb-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
+      toolInputTableOpen() +
       inputRow(S.meaning('T'), S.symbolHtml('T'), '<input type="text" id="bb-T" inputmode="decimal" placeholder="e.g. 5778" value="5778">', 'K') +
       '</tbody></table></div>';
     var bbFormulaHtml = '<p class="tool-formula">B(' + S.symbolHtml('lambda') + ',' + S.symbolHtml('T') + ') = (2hc²/' + S.symbolHtml('lambda') + '⁵) / (e<sup>hc/(' + S.symbolHtml('lambda') + 'k' + S.symbolHtml('T') + ')</sup> − 1) (Planck)</p><p class="tool-formula">' + S.symbolHtml('lambda') + '<sub>max</sub>' + S.symbolHtml('T') + ' = b (Wien)</p><p class="tool-formula">R = ' + S.symbolHtml('sigma') + S.symbolHtml('T') + '⁴ (Stefan–Boltzmann)</p>';
@@ -2520,7 +2654,7 @@
   }
 
   function runPeakConvolution() {
-    var PC = window.SCIREPO_PEAK_CONVOLUTION;
+    var PC = window.SCIRESO_PEAK_CONVOLUTION;
     if (!PC) return;
     var container = document.getElementById('pc-results');
     if (!container) return;
@@ -2583,17 +2717,32 @@
   function initPeakConvolution() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('pc-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Mode', '', '<select id="pc-mode"><option value="convolve">Convolve two peaks</option><option value="deconvolve">Deconvolve (find peak 2)</option></select>', '') +
-      '<tr id="pc-peak1-wrap"><td id="pc-type1-desc" class="input-desc">Peak 1 type</td><td class="input-sym"></td><td class="input-val"><select id="pc-type1"><option value="gaussian">Gaussian</option><option value="lorentzian">Lorentzian</option><option value="voigt">Voigt</option></select></td><td class="input-unit"></td></tr>' +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Mode', inputChoiceButtonsHtml('pc-mode', [
+        { value: 'convolve', label: 'Convolve two peaks' },
+        { value: 'deconvolve', label: 'Deconvolve (find peak 2)' }
+      ], 'convolve', 'Mode')) +
+      inputChoiceSectionRow('Peak 1 type', inputChoiceButtonsHtml('pc-type1', [
+        { value: 'gaussian', label: 'Gaussian' },
+        { value: 'lorentzian', label: 'Lorentzian' },
+        { value: 'voigt', label: 'Voigt' }
+      ], 'gaussian', 'Peak 1 type'), 'pc-peak1-wrap', 'pc-type1-desc') +
       '<tr id="pc-fwhm1-wrap"><td id="pc-fwhm1-desc" class="input-desc">Peak 1 ' + S.symbolHtml('FWHM') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM') + '</td><td class="input-val"><input type="text" id="pc-fwhm1" inputmode="decimal" placeholder="e.g. 1" value="1"></td><td class="input-unit"></td></tr>' +
       '<tr id="pc-voigt1-wrap" style="display:none"><td class="input-desc">Peak 1 ' + S.symbolHtml('FWHM_G') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM_G') + '</td><td class="input-val"><input type="text" id="pc-fwhm1g" inputmode="decimal" placeholder="Gaussian part" value="0.5"></td><td class="input-unit"></td></tr>' +
       '<tr id="pc-voigt1l-row" style="display:none"><td class="input-desc">Peak 1 ' + S.symbolHtml('FWHM_L') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM_L') + '</td><td class="input-val"><input type="text" id="pc-fwhm1l" inputmode="decimal" placeholder="Lorentzian part" value="0.5"></td><td class="input-unit"></td></tr>' +
-      '<tr id="pc-peak2-wrap"><td class="input-desc">Peak 2 type</td><td class="input-sym"></td><td class="input-val"><select id="pc-type2"><option value="gaussian">Gaussian</option><option value="lorentzian">Lorentzian</option><option value="voigt">Voigt</option></select></td><td class="input-unit"></td></tr>' +
+      inputChoiceSectionRow('Peak 2 type', inputChoiceButtonsHtml('pc-type2', [
+        { value: 'gaussian', label: 'Gaussian' },
+        { value: 'lorentzian', label: 'Lorentzian' },
+        { value: 'voigt', label: 'Voigt' }
+      ], 'gaussian', 'Peak 2 type'), 'pc-peak2-wrap') +
       '<tr id="pc-fwhm2-wrap"><td class="input-desc">Peak 2 ' + S.symbolHtml('FWHM') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM') + '</td><td class="input-val"><input type="text" id="pc-fwhm2" inputmode="decimal" placeholder="e.g. 1" value="1"></td><td class="input-unit"></td></tr>' +
       '<tr id="pc-voigt2-wrap" style="display:none"><td class="input-desc">Peak 2 ' + S.symbolHtml('FWHM_G') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM_G') + '</td><td class="input-val"><input type="text" id="pc-fwhm2g" inputmode="decimal" placeholder="Gaussian part" value="0.5"></td><td class="input-unit"></td></tr>' +
       '<tr id="pc-voigt2l-row" style="display:none"><td class="input-desc">Peak 2 ' + S.symbolHtml('FWHM_L') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM_L') + '</td><td class="input-val"><input type="text" id="pc-fwhm2l" inputmode="decimal" placeholder="Lorentzian part" value="0.5"></td><td class="input-unit"></td></tr>' +
-      '<tr id="pc-conv-wrap" style="display:none"><td class="input-desc">Convoluted type</td><td class="input-sym"></td><td class="input-val"><select id="pc-conv-type"><option value="gaussian">Gaussian</option><option value="lorentzian">Lorentzian</option><option value="voigt">Voigt</option></select></td><td class="input-unit"></td></tr>' +
+      inputChoiceSectionRow('Convoluted type', inputChoiceButtonsHtml('pc-conv-type', [
+        { value: 'gaussian', label: 'Gaussian' },
+        { value: 'lorentzian', label: 'Lorentzian' },
+        { value: 'voigt', label: 'Voigt' }
+      ], 'gaussian', 'Convoluted type'), 'pc-conv-wrap', '', 'style="display:none"') +
       '<tr id="pc-conv-fwhm-wrap" style="display:none"><td class="input-desc">Convoluted ' + S.symbolHtml('FWHM') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM') + '</td><td class="input-val"><input type="text" id="pc-conv-fwhm" inputmode="decimal" placeholder="measured total" value="2"></td><td class="input-unit"></td></tr>' +
       '<tr id="pc-conv-voigt-wrap" style="display:none"><td class="input-desc">Convoluted ' + S.symbolHtml('FWHM_G') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM_G') + '</td><td class="input-val"><input type="text" id="pc-conv-g" inputmode="decimal" placeholder="Gaussian part" value="0.5"></td><td class="input-unit"></td></tr>' +
       '<tr id="pc-conv-voigtl-row" style="display:none"><td class="input-desc">Convoluted ' + S.symbolHtml('FWHM_L') + '</td><td class="input-sym sym-quantity">' + S.symbolHtml('FWHM_L') + '</td><td class="input-val"><input type="text" id="pc-conv-l" inputmode="decimal" placeholder="Lorentzian part" value="0.5"></td><td class="input-unit"></td></tr>' +
@@ -2643,14 +2792,10 @@
       var fwhmDesc = document.getElementById('pc-fwhm1-desc');
       if (fwhmDesc) fwhmDesc.innerHTML = mode === 'deconvolve' ? 'Known peak ' + S.symbolHtml('FWHM') : 'Peak 1 ' + S.symbolHtml('FWHM');
     }
-    var modeEl = document.getElementById('pc-mode');
-    if (modeEl) modeEl.addEventListener('change', function () { toggleDeconv(); updateLabels(); runPeakConvolution(); });
-    var t1 = document.getElementById('pc-type1');
-    if (t1) t1.addEventListener('change', function () { toggleVoigt1(); runPeakConvolution(); });
-    var t2 = document.getElementById('pc-type2');
-    if (t2) t2.addEventListener('change', function () { toggleVoigt2(); runPeakConvolution(); });
-    var tc = document.getElementById('pc-conv-type');
-    if (tc) tc.addEventListener('change', function () { toggleConvVoigt(); runPeakConvolution(); });
+    bindChoiceButtons('pc-mode', function () { toggleDeconv(); updateLabels(); runPeakConvolution(); });
+    bindChoiceButtons('pc-type1', function () { toggleVoigt1(); runPeakConvolution(); });
+    bindChoiceButtons('pc-type2', function () { toggleVoigt2(); runPeakConvolution(); });
+    bindChoiceButtons('pc-conv-type', function () { toggleConvVoigt(); runPeakConvolution(); });
     toggleDeconv();
     toggleVoigt1();
     toggleVoigt2();
@@ -2664,7 +2809,7 @@
 
   function runDecay() {
     if (currentToolId !== 'decay' || !toolResultsEl) return;
-    var DECAY = window.SCIREPO_DECAY;
+    var DECAY = window.SCIRESO_DECAY;
     var decayFormulaHtml = '<p class="tool-formula">' + S.symbolHtml('N_t') + ' = ' + S.symbolHtml('N0') + ' · 2<sup>−' + S.symbolHtml('t') + '/' + S.symbolHtml('t_half') + '</sup></p><p class="tool-formula">' + S.symbolHtml('A') + ' = ' + S.symbolHtml('lambda_dec') + 'N</p>';
     var decayPanelOpts = {
       viewButtons: [{ view: 'results', label: 'Results' }, { view: 'equations', label: 'Equations' }, { view: 'plot', label: 'Plot (N)' }],
@@ -2715,11 +2860,11 @@
 
   function getSynchVal(id) {
     var el = document.getElementById(id);
-    return el ? window.SCIREPO_SYNCHROTRON.parseNum(el.value) : NaN;
+    return el ? window.SCIRESO_SYNCHROTRON.parseNum(el.value) : NaN;
   }
 
   function runSynchrotron() {
-    var Ssyn = window.SCIREPO_SYNCHROTRON;
+    var Ssyn = window.SCIRESO_SYNCHROTRON;
     var modeEl = document.getElementById('synch-mode');
     var mode = modeEl ? modeEl.value : 'bend';
     var E_GeV = getSynchVal('synch-E');
@@ -2768,7 +2913,7 @@
   }
 
   function drawDecayPlot(container, N0, tHalf_s, r, tUnit) {
-    var DECAY = window.SCIREPO_DECAY;
+    var DECAY = window.SCIRESO_DECAY;
     if (!DECAY || !container) return;
     var timeLabel = DECAY.timeUnitLabel ? DECAY.timeUnitLabel(tUnit || 's') : 's';
     var pad = PAD_LARGE;
@@ -2836,7 +2981,7 @@
     if (!toolResultsEl) return;
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('decay-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
+      toolInputTableOpen() +
       inputRow(S.meaning('N0'), S.symbolHtml('N0'), '<input type="text" id="decay-N0" inputmode="decimal" placeholder="e.g. 1e6" value="1e6">', '') +
       inputRow(S.meaning('t_half'), S.symbolHtml('t_half'), '<input type="text" id="decay-t-half" inputmode="decimal" placeholder="e.g. 10" value="10">', '<select id="decay-t-half-unit"><option value="s">s</option><option value="min">min</option><option value="h">h</option><option value="d">d</option><option value="y" selected>yr</option></select>') +
       inputRow(S.meaning('t'), S.symbolHtml('t'), '<input type="text" id="decay-t" inputmode="decimal" placeholder="e.g. 5" value="5">', '<select id="decay-t-unit"><option value="s">s</option><option value="min">min</option><option value="h">h</option><option value="d">d</option><option value="y" selected>yr</option></select>') +
@@ -2858,7 +3003,7 @@
   }
 
   function runIdealGas() {
-    var IG = window.SCIREPO_IDEAL_GAS;
+    var IG = window.SCIRESO_IDEAL_GAS;
     if (!IG) return;
     var container = document.getElementById('ideal-gas-results');
     var solveEl = document.getElementById('ideal-gas-solve');
@@ -2897,12 +3042,17 @@
   function initIdealGas() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('ideal-gas-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Solve for', '', '<select id="ideal-gas-solve"><option value="P">' + S.symbolHtml('P') + ' (pressure)</option><option value="V">' + S.symbolHtml('V') + ' (volume)</option><option value="n">' + S.symbolHtml('n') + ' (amount)</option><option value="T">' + S.symbolHtml('T') + ' (temperature)</option></select>', '') +
-      inputRow(S.meaning('P'), S.symbolHtml('P'), '<input type="text" id="ideal-gas-P" inputmode="decimal" placeholder="e.g. 101325" value="101325">', '<select id="ideal-gas-P-unit"><option value="Pa">Pa</option><option value="bar">bar</option><option value="atm" selected>atm</option><option value="mmHg">mmHg</option></select>') +
-      inputRow(S.meaning('V'), S.symbolHtml('V'), '<input type="text" id="ideal-gas-V" inputmode="decimal" placeholder="e.g. 22.4" value="22.4">', '<select id="ideal-gas-V-unit"><option value="m3">m³</option><option value="L" selected>L</option><option value="mL">mL</option></select>') +
-      inputRow(S.meaning('n'), S.symbolHtml('n'), '<input type="text" id="ideal-gas-n" inputmode="decimal" placeholder="e.g. 1" value="1">', 'mol') +
-      inputRow(S.meaning('T'), S.symbolHtml('T'), '<input type="text" id="ideal-gas-T" inputmode="decimal" placeholder="e.g. 273.15" value="273.15">', '<select id="ideal-gas-T-unit"><option value="K" selected>K</option><option value="c">°C</option></select>') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Solve for', inputChoiceButtonsHtml('ideal-gas-solve', [
+        { value: 'P', label: S.symbolHtml('P') + ' (pressure)' },
+        { value: 'V', label: S.symbolHtml('V') + ' (volume)' },
+        { value: 'n', label: S.symbolHtml('n') + ' (amount)' },
+        { value: 'T', label: S.symbolHtml('T') + ' (temperature)' }
+      ], 'P', 'Solve for')) +
+      inputRow(S.meaning('P'), S.symbolHtml('P'), '<input type="text" id="ideal-gas-P" inputmode="decimal" placeholder="e.g. 101325" value="101325">', '<select id="ideal-gas-P-unit"><option value="Pa">Pa</option><option value="bar">bar</option><option value="atm" selected>atm</option><option value="mmHg">mmHg</option></select>', 'ideal-gas-row-P') +
+      inputRow(S.meaning('V'), S.symbolHtml('V'), '<input type="text" id="ideal-gas-V" inputmode="decimal" placeholder="e.g. 22.4" value="22.4">', '<select id="ideal-gas-V-unit"><option value="m3">m³</option><option value="L" selected>L</option><option value="mL">mL</option></select>', 'ideal-gas-row-V') +
+      inputRow(S.meaning('n'), S.symbolHtml('n'), '<input type="text" id="ideal-gas-n" inputmode="decimal" placeholder="e.g. 1" value="1">', 'mol', 'ideal-gas-row-n') +
+      inputRow(S.meaning('T'), S.symbolHtml('T'), '<input type="text" id="ideal-gas-T" inputmode="decimal" placeholder="e.g. 273.15" value="273.15">', '<select id="ideal-gas-T-unit"><option value="K" selected>K</option><option value="c">°C</option></select>', 'ideal-gas-row-T') +
       '</tbody></table></div>';
     var igFormulaHtml = '<p class="tool-formula">' + S.symbolHtml('P') + S.symbolHtml('V') + ' = ' + S.symbolHtml('n') + 'R' + S.symbolHtml('T') + '</p>';
     toolResultsEl.innerHTML = buildToolResultsPanel({
@@ -2910,7 +3060,21 @@
       resultsId: 'ideal-gas-results',
       equationsHtml: igFormulaHtml
     });
+    function syncIdealGasInputRows() {
+      var solveEl = document.getElementById('ideal-gas-solve');
+      var s = (solveEl && solveEl.value) || 'P';
+      var rP = document.getElementById('ideal-gas-row-P');
+      var rV = document.getElementById('ideal-gas-row-V');
+      var rn = document.getElementById('ideal-gas-row-n');
+      var rT = document.getElementById('ideal-gas-row-T');
+      if (rP) rP.style.display = s === 'P' ? 'none' : '';
+      if (rV) rV.style.display = s === 'V' ? 'none' : '';
+      if (rn) rn.style.display = s === 'n' ? 'none' : '';
+      if (rT) rT.style.display = s === 'T' ? 'none' : '';
+    }
+    bindChoiceButtons('ideal-gas-solve', syncIdealGasInputRows);
     bindInputsToRun(['ideal-gas-solve', 'ideal-gas-P', 'ideal-gas-V', 'ideal-gas-n', 'ideal-gas-T', 'ideal-gas-P-unit', 'ideal-gas-V-unit', 'ideal-gas-T-unit'], runIdealGas);
+    syncIdealGasInputRows();
     runIdealGas();
     var igReset = document.getElementById('ideal-gas-reset-defaults');
     if (igReset) igReset.addEventListener('click', initIdealGas);
@@ -3007,8 +3171,12 @@
   function initDiffraction() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('diffract-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Type', '', '<select id="diffract-type"><option value="single">Single slit</option><option value="double">Double slit</option><option value="grating">Grating</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Type', inputChoiceButtonsHtml('diffract-type', [
+        { value: 'single', label: 'Single slit' },
+        { value: 'double', label: 'Double slit' },
+        { value: 'grating', label: 'Grating' }
+      ], 'single', 'Geometry')) +
       inputRow('Wavelength', S.symbolHtml('lambda'), '<input type="text" id="diffract-lambda" inputmode="decimal" placeholder="e.g. 600" value="600">', 'nm') +
       inputRow('Slit width', S.symbolHtml('length'), '<input type="text" id="diffract-a" inputmode="decimal" placeholder="e.g. 1" value="1">', 'μm', 'diffract-row-a') +
       inputRow('Slit separation', S.symbolHtml('d'), '<input type="text" id="diffract-d" inputmode="decimal" placeholder="e.g. 5" value="5">', 'μm', 'diffract-row-d') +
@@ -3024,6 +3192,7 @@
       equationsHtml: '',
       plotPanes: [{ dataPlot: 'plot', plotId: 'diffract-plot', controlsPrefix: 'diffract-plot', scaleButtons: true }]
     });
+    bindChoiceButtons('diffract-type');
     bindInputsToRun(['diffract-type', 'diffract-lambda', 'diffract-a', 'diffract-d', 'diffract-N', 'diffract-plot-xmin', 'diffract-plot-xmax', 'diffract-plot-ymin', 'diffract-plot-ymax', 'plot-aspect-ratio'], runDiffraction);
     bindScaleButtonsInPanel(runDiffraction);
     bindPlotGridButton(runDiffraction);
@@ -3035,8 +3204,12 @@
   function initSynchrotron() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('synch-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Source type', '', '<select id="synch-mode"><option value="bend">Bending magnet</option><option value="wiggler">Wiggler</option><option value="undulator">Undulator</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Source type', inputChoiceButtonsHtml('synch-mode', [
+        { value: 'bend', label: 'Bending magnet' },
+        { value: 'wiggler', label: 'Wiggler' },
+        { value: 'undulator', label: 'Undulator' }
+      ], 'bend', 'Source type')) +
       inputRow('Beam energy', S.symbolHtml('E'), '<input type="text" id="synch-E" inputmode="decimal" placeholder="e.g. 3" value="3">', 'GeV') +
       inputRow('Beam current', S.symbolHtml('I'), '<input type="text" id="synch-I" inputmode="decimal" placeholder="e.g. 0.5" value="0.5">', 'A') +
       inputRow('Dipole field', S.symbolHtml('B'), '<input type="text" id="synch-B" inputmode="decimal" placeholder="e.g. 1.2" value="1.2">', 'T') +
@@ -3055,9 +3228,8 @@
       equationsHtml: ''
     });
     bindInputsToRun(['synch-mode', 'synch-E', 'synch-I', 'synch-B', 'synch-rho', 'synch-lu', 'synch-N', 'synch-K', 'synch-harm'], runSynchrotron);
-    var modeEl = document.getElementById('synch-mode');
     function updateSynchVisibility() {
-      var mode = (modeEl && modeEl.value) || 'bend';
+      var mode = (document.getElementById('synch-mode') && document.getElementById('synch-mode').value) || 'bend';
       var rowLu = document.getElementById('synch-row-lu');
       var rowN = document.getElementById('synch-row-N');
       var rowK = document.getElementById('synch-row-K');
@@ -3068,7 +3240,7 @@
       if (rowK) rowK.style.display = showUnd ? '' : 'none';
       if (rowH) rowH.style.display = showUnd ? '' : 'none';
     }
-    if (modeEl) modeEl.addEventListener('change', function () {
+    bindChoiceButtons('synch-mode', function () {
       updateSynchVisibility();
       runSynchrotron();
     });
@@ -3081,7 +3253,7 @@
   function initBrilliance() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('br-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
+      toolInputTableOpen() +
       inputRow('Flux', S.symbolHtml('Phi'), '<input type="text" id="br-flux" inputmode="decimal" placeholder="e.g. 1e13" value="1e13">', '') +
       inputRow('RMS size X', S.symbolHtml('sigma_x'), '<input type="text" id="br-sx" inputmode="decimal" placeholder="e.g. 30" value="30">', 'μm') +
       inputRow('RMS size Y', S.symbolHtml('sigma_y'), '<input type="text" id="br-sy" inputmode="decimal" placeholder="e.g. 10" value="10">', 'μm') +
@@ -3106,8 +3278,12 @@
   function initBragg() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('bragg-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Mode', '', '<select id="bragg-mode"><option value="lambda-from-theta" selected>Solve λ from θ</option><option value="theta-from-lambda">Solve θ from λ</option><option value="theta-from-energy">Solve θ from E</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Mode', inputChoiceButtonsHtml('bragg-mode', [
+        { value: 'lambda-from-theta', label: 'Solve λ from θ' },
+        { value: 'theta-from-lambda', label: 'Solve θ from λ' },
+        { value: 'theta-from-energy', label: 'Solve θ from E' }
+      ], 'lambda-from-theta', 'Mode')) +
       inputRow('Order', S.symbolHtml('n'), '<input type="text" id="bragg-n" inputmode="decimal" placeholder="e.g. 1" value="1">', '', 'bragg-row-n') +
       inputRow('d-spacing', S.symbolHtml('d'), '<input type="text" id="bragg-d" inputmode="decimal" placeholder="e.g. 3.1356" value="3.1356">', 'Å', 'bragg-row-d') +
       inputRow('Bragg angle', S.symbolHtml('theta'), '<input type="text" id="bragg-theta" inputmode="decimal" placeholder="e.g. 15" value="15">', 'deg', 'bragg-row-theta') +
@@ -3133,7 +3309,7 @@
       if (rowLambda) rowLambda.style.display = (mode === 'theta-from-lambda') ? '' : 'none';
       if (rowE) rowE.style.display = (mode === 'theta-from-energy') ? '' : 'none';
     }
-    if (modeEl) modeEl.addEventListener('change', function () {
+    bindChoiceButtons('bragg-mode', function () {
       updateBraggVisibility();
       runBragg();
     });
@@ -3144,7 +3320,7 @@
   }
 
   function runBrilliance() {
-    var B = window.SCIREPO_BRILLIANCE;
+    var B = window.SCIRESO_BRILLIANCE;
     var flux = B.parseNum(document.getElementById('br-flux') && document.getElementById('br-flux').value);
     var sx = B.parseNum(document.getElementById('br-sx') && document.getElementById('br-sx').value);
     var sy = B.parseNum(document.getElementById('br-sy') && document.getElementById('br-sy').value);
@@ -3175,7 +3351,7 @@
   }
 
   function runBragg() {
-    var B = window.SCIREPO_BRAGG;
+    var B = window.SCIRESO_BRAGG;
     var mode = (document.getElementById('bragg-mode') && document.getElementById('bragg-mode').value) || 'lambda-from-theta';
     var n = B.parseNum(document.getElementById('bragg-n') && document.getElementById('bragg-n').value);
     var d = B.parseNum(document.getElementById('bragg-d') && document.getElementById('bragg-d').value);
@@ -3237,7 +3413,7 @@
   function initRefraction() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('refract-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
+      toolInputTableOpen() +
       inputRow(S.meaning('n_1'), S.symbolHtml('n_1'), '<input type="text" id="refract-n1" inputmode="decimal" placeholder="e.g. 1" value="1">', '') +
       inputRow(S.meaning('n_2'), S.symbolHtml('n_2'), '<input type="text" id="refract-n2" inputmode="decimal" placeholder="e.g. 1.5" value="1.5">', '') +
       inputRow(S.meaning('theta_1'), S.symbolHtml('theta_1'), '<input type="text" id="refract-theta1" inputmode="decimal" placeholder="e.g. 30" value="30">', 'deg') +
@@ -3281,9 +3457,15 @@
   function initThinLens() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('thinlens-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Type', '', '<select id="thinlens-type"><option value="lens">Lens</option><option value="mirror">Mirror</option></select>', '') +
-      inputRow('Kind', '', '<select id="thinlens-conv"><option value="converging" selected>Converging</option><option value="diverging">Diverging</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Type', inputChoiceButtonsHtml('thinlens-type', [
+        { value: 'lens', label: 'Lens' },
+        { value: 'mirror', label: 'Mirror' }
+      ], 'lens', 'Type')) +
+      inputChoiceSectionRow('Kind', inputChoiceButtonsHtml('thinlens-conv', [
+        { value: 'converging', label: 'Converging' },
+        { value: 'diverging', label: 'Diverging' }
+      ], 'converging', 'Converging / diverging')) +
       inputRow(S.meaning('f_focal'), S.symbolHtml('f_focal'), '<input type="text" id="thinlens-f" inputmode="decimal" placeholder="e.g. 20" value="20">', 'cm') +
       inputRow(S.meaning('s_obj'), S.symbolHtml('s_obj'), '<input type="text" id="thinlens-s" inputmode="decimal" placeholder="e.g. 30" value="30">', 'cm') +
       '</tbody></table></div>';
@@ -3292,6 +3474,8 @@
       resultsId: 'thinlens-results',
       equationsHtml: '<p class="tool-formula">1/' + S.symbol('s_obj') + ' + 1/' + S.symbol('s_prime') + ' = 1/' + S.symbol('f_focal') + '</p>'
     });
+    bindChoiceButtons('thinlens-type');
+    bindChoiceButtons('thinlens-conv');
     bindInputsToRun(['thinlens-type', 'thinlens-conv', 'thinlens-f', 'thinlens-s'], runThinLens);
     runThinLens();
     var r = document.getElementById('thinlens-reset-defaults');
@@ -3340,19 +3524,37 @@
   function initHeisenberg() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('heisenberg-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Uncertainty pair', '', '<select id="heisenberg-pair"><option value="xp">' + ('Δ' + S.symbol('x')) + ', ' + ('Δ' + S.symbol('p')) + '</option><option value="Et">' + ('Δ' + S.symbol('E')) + ', ' + ('Δ' + S.symbol('t')) + '</option></select>', '') +
-      inputRow('Position uncertainty', 'Δ' + S.symbol('x'), '<input type="text" id="heisenberg-dx" inputmode="decimal" placeholder="e.g. 1e-10" value="1e-10">', 'm') +
-      inputRow('Momentum uncertainty', 'Δ' + S.symbol('p'), '<input type="text" id="heisenberg-dp" inputmode="decimal" placeholder="e.g. 1e-24" value="">', 'kg·m/s') +
-      inputRow('Energy uncertainty', 'Δ' + S.symbol('E'), '<input type="text" id="heisenberg-dE" inputmode="decimal" placeholder="e.g. 1" value="1">', 'eV') +
-      inputRow('Time uncertainty', 'Δ' + S.symbol('t'), '<input type="text" id="heisenberg-dt" inputmode="decimal" placeholder="e.g. 1e-15" value="">', 's') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Uncertainty pair', inputChoiceButtonsHtml('heisenberg-pair', [
+        { value: 'xp', label: ('Δ' + S.symbol('x')) + ', ' + ('Δ' + S.symbol('p')) },
+        { value: 'Et', label: ('Δ' + S.symbol('E')) + ', ' + ('Δ' + S.symbol('t')) }
+      ], 'xp', 'Uncertainty pair')) +
+      inputRow('Position uncertainty', 'Δ' + S.symbol('x'), '<input type="text" id="heisenberg-dx" inputmode="decimal" placeholder="e.g. 1e-10" value="1e-10">', 'm', 'heisenberg-row-dx') +
+      inputRow('Momentum uncertainty', 'Δ' + S.symbol('p'), '<input type="text" id="heisenberg-dp" inputmode="decimal" placeholder="e.g. 1e-24" value="">', 'kg·m/s', 'heisenberg-row-dp') +
+      inputRow('Energy uncertainty', 'Δ' + S.symbol('E'), '<input type="text" id="heisenberg-dE" inputmode="decimal" placeholder="e.g. 1" value="1">', 'eV', 'heisenberg-row-dE') +
+      inputRow('Time uncertainty', 'Δ' + S.symbol('t'), '<input type="text" id="heisenberg-dt" inputmode="decimal" placeholder="e.g. 1e-15" value="">', 's', 'heisenberg-row-dt') +
       '</tbody></table></div>';
     toolResultsEl.innerHTML = buildToolResultsPanel({
       viewButtons: [{ view: 'results', label: 'Results' }, { view: 'equations', label: 'Equations' }],
       resultsId: 'heisenberg-results',
       equationsHtml: '<p class="tool-formula">' + ('Δ' + S.symbol('x')) + ' ' + ('Δ' + S.symbol('p')) + ' ≥ ℏ/2</p><p class="tool-formula">' + ('Δ' + S.symbol('E')) + ' ' + ('Δ' + S.symbol('t')) + ' ≥ ℏ/2</p>'
     });
+    function toggleHeisenbergInputRows() {
+      var pairEl = document.getElementById('heisenberg-pair');
+      var pair = (pairEl && pairEl.value) || 'xp';
+      var showXp = pair === 'xp';
+      var rdx = document.getElementById('heisenberg-row-dx');
+      var rdp = document.getElementById('heisenberg-row-dp');
+      var rdE = document.getElementById('heisenberg-row-dE');
+      var rdt = document.getElementById('heisenberg-row-dt');
+      if (rdx) rdx.style.display = showXp ? '' : 'none';
+      if (rdp) rdp.style.display = showXp ? '' : 'none';
+      if (rdE) rdE.style.display = showXp ? 'none' : '';
+      if (rdt) rdt.style.display = showXp ? 'none' : '';
+    }
+    bindChoiceButtons('heisenberg-pair', toggleHeisenbergInputRows);
     bindInputsToRun(['heisenberg-pair', 'heisenberg-dx', 'heisenberg-dp', 'heisenberg-dE', 'heisenberg-dt'], runHeisenberg);
+    toggleHeisenbergInputRows();
     runHeisenberg();
     var r = document.getElementById('heisenberg-reset-defaults');
     if (r) r.addEventListener('click', initHeisenberg);
@@ -3384,6 +3586,34 @@
       }
     }
     return { x: x, y: y };
+  }
+
+  function dataPlotClearFileLoadMessage() {
+    var el = document.getElementById('dp-results');
+    if (el && el.querySelector('.dp-load-file-msg')) el.innerHTML = '';
+  }
+
+  function dataPlotShowFileLoadMessage(msg) {
+    var el = document.getElementById('dp-results');
+    if (!el) {
+      window.alert(msg);
+      return;
+    }
+    el.innerHTML = '';
+    var p = document.createElement('p');
+    p.className = 'tool-muted dp-load-file-msg';
+    p.textContent = msg;
+    el.appendChild(p);
+  }
+
+  /** @returns {'text-grid'|'text-try'|'h5'|'raster-image'|'unsupported'} */
+  function dataPlotFileLoadKind(nameLower) {
+    if (!nameLower) return 'unsupported';
+    if (/\.(png|jpe?g|webp|gif|bmp)$/i.test(nameLower)) return 'raster-image';
+    if (/\.h5$/i.test(nameLower)) return 'h5';
+    if (/\.(csv|txt|dat)$/i.test(nameLower)) return 'text-grid';
+    if (nameLower.indexOf('.') < 0) return 'text-try';
+    return 'unsupported';
   }
 
   function drawDataPlotMarker(ctx, gx, gy, typeIndex, color) {
@@ -3608,21 +3838,23 @@
     var showLegend = legendPosition !== 'none';
     var datasetNames = options.datasetNames || [];
     var title = (options.title != null && String(options.title).trim() !== '') ? String(options.title).trim() : '';
-    var pad = PAD_LARGE;
+    var padEmpty = { L: PAD_LARGE.L, R: PAD_LARGE.R, T: PAD_LARGE.T, B: PAD_LARGE.B };
     var size = getPlotSize(container, PLOT_SLOT.cw, PLOT_SLOT.ch);
     var cw = size.cw;
     var ch = size.ch;
-    var w = cw - pad.L - pad.R;
-    var h = ch - pad.T - pad.B;
+    var wEmpty = cw - padEmpty.L - padEmpty.R;
+    var hEmpty = ch - padEmpty.T - padEmpty.B;
     var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
     for (var s = 0; s < seriesList.length; s++) {
       var xs = seriesList[s].x, ys = seriesList[s].y;
       var nn = Math.min(xs.length, ys.length);
       for (var i = 0; i < nn; i++) {
-        if (xs[i] < xMin) xMin = xs[i];
-        if (xs[i] > xMax) xMax = xs[i];
-        if (ys[i] < yMin) yMin = ys[i];
-        if (ys[i] > yMax) yMax = ys[i];
+        if (isFinite(xs[i]) && isFinite(ys[i])) {
+          if (xs[i] < xMin) xMin = xs[i];
+          if (xs[i] > xMax) xMax = xs[i];
+          if (ys[i] < yMin) yMin = ys[i];
+          if (ys[i] > yMax) yMax = ys[i];
+        }
       }
     }
     if (!isFinite(xMin) || !isFinite(xMax) || !isFinite(yMin) || !isFinite(yMax)) {
@@ -3635,7 +3867,7 @@
       ctx.font = FONT_TITLE;
       ctx.textAlign = 'center';
       ctx.fillStyle = PLOT_MUTED;
-      ctx.fillText('No data', pad.L + w / 2, pad.T + h / 2);
+      ctx.fillText('No data', padEmpty.L + wEmpty / 2, padEmpty.T + hEmpty / 2);
       container.appendChild(canvas);
       return;
     }
@@ -3664,19 +3896,25 @@
       if (isFinite(yMinPos) && isFinite(yMaxPos)) { yMin = yMinPos; yMax = yMaxPos; }
       else { yMin = 0.1; yMax = 10; }
     }
-    var userX = (rr.xMin != null && isFinite(rr.xMin)) && (rr.xMax != null && isFinite(rr.xMax));
-    var userY = (rr.yMin != null && isFinite(rr.yMin)) && (rr.yMax != null && isFinite(rr.yMax));
+    var userXBoth = (rr.xMin != null && isFinite(rr.xMin)) && (rr.xMax != null && isFinite(rr.xMax));
+    var userYBoth = (rr.yMin != null && isFinite(rr.yMin)) && (rr.yMax != null && isFinite(rr.yMax));
     if (rr.xMin != null && isFinite(rr.xMin)) xMin = rr.xMin;
     if (rr.xMax != null && isFinite(rr.xMax)) xMax = rr.xMax;
     if (rr.yMin != null && isFinite(rr.yMin)) yMin = rr.yMin;
     if (rr.yMax != null && isFinite(rr.yMax)) yMax = rr.yMax;
+    if (xMax < xMin) { var swapX = xMin; xMin = xMax; xMax = swapX; }
+    if (yMax < yMin) { var swapY = yMin; yMin = yMax; yMax = swapY; }
     if (xScale === 'log' && xMin <= 0) xMin = Math.min(0.1, xMax / 1000) || 0.1;
     if (xScale === 'log' && xMax <= 0) xMax = Math.max(10, xMin * 1000) || 10;
     if (yScale === 'log' && yMin <= 0) yMin = Math.min(0.1, yMax / 1000) || 0.1;
     if (yScale === 'log' && yMax <= 0) yMax = Math.max(10, yMin * 1000) || 10;
     var xSpan = xMax - xMin || 1;
     var ySpan = yMax - yMin || 1;
+    var userX = userXBoth;
+    var userY = userYBoth;
     var margin = 0.02;
+    var skipNiceX = !userX;
+    var skipNiceY = !userY;
     var plotXMin, plotXMax, plotYMin, plotYMax;
     if (userX) {
       plotXMin = xScale === 'log' && xMin <= 0 ? (Math.min(0.1, xMax / 1000) || 0.1) : xMin;
@@ -3688,11 +3926,13 @@
       } else {
         plotXMin = xMin - xSpan * margin;
         plotXMax = xMax + xSpan * margin;
-        var xNice = uniqSorted(niceTicks(plotXMin, plotXMax, 8));
-        if (xNice.length >= 2) {
-          var xStep = xNice[1] - xNice[0];
-          plotXMin = xStep * Math.floor(plotXMin / xStep);
-          plotXMax = xStep * Math.ceil(plotXMax / xStep);
+        if (!skipNiceX) {
+          var xNice = uniqSorted(niceTicks(plotXMin, plotXMax, 8));
+          if (xNice.length >= 2) {
+            var xStep = xNice[1] - xNice[0];
+            plotXMin = xStep * Math.floor(plotXMin / xStep);
+            plotXMax = xStep * Math.ceil(plotXMax / xStep);
+          }
         }
       }
     }
@@ -3706,11 +3946,13 @@
       } else {
         plotYMin = yMin - ySpan * margin;
         plotYMax = yMax + ySpan * margin;
-        var yNice = uniqSorted(niceTicks(plotYMin, plotYMax, 8));
-        if (yNice.length >= 2) {
-          var yStep = yNice[1] - yNice[0];
-          plotYMin = yStep * Math.floor(plotYMin / yStep);
-          plotYMax = yStep * Math.ceil(plotYMax / yStep);
+        if (!skipNiceY) {
+          var yNice = uniqSorted(niceTicks(plotYMin, plotYMax, 8));
+          if (yNice.length >= 2) {
+            var yStep = yNice[1] - yNice[0];
+            plotYMin = yStep * Math.floor(plotYMin / yStep);
+            plotYMax = yStep * Math.ceil(plotYMax / yStep);
+          }
         }
       }
     }
@@ -3731,8 +3973,10 @@
       plotXMin: plotXMin, plotXMax: plotXMax, plotYMin: plotYMin, plotYMax: plotYMax,
       xScale: xScale, yScale: yScale, xLabel: xLabel, yLabel: yLabel, title: title,
       canvasClass: 'data-plot',
+      extraPadR: 0,
+      suppressMajorGrid: false,
       drawData: function (ctx, h) {
-        var toGX = h.toGX, toGY = h.toGY, pad = h.pad, w = h.w, h_ = h.h, ch = h.ch;
+        var toGX = h.toGX, toGY = h.toGY, pad = h.pad, w = h.w, h_ = h.h, ch = h.ch, cw = h.cw;
         var gyZero = (yScale === 'log') ? (ch - pad.B) : ch - pad.B - ((0 - plotYMin) / plotYSpan) * h_;
         ctx.lineWidth = 2;
         for (var s = 0; s < seriesList.length; s++) {
@@ -3838,8 +4082,8 @@
           }
         }
         var legCount = datasetNames.length + fitEntries.length;
+        var pad = h.pad, w = h.w, h_ = h.h, ch = h.ch, cw = h.cw;
         if (!showLegend || legCount === 0) return;
-        var pad = h.pad, w = h.w, h_ = h.h;
         var legBoxW = 14;
         var legBoxH = 14;
         var legGap = 4;
@@ -3923,6 +4167,18 @@
     });
   }
 
+  var dataPlotDatasets = [];
+  var dataPlotCurrentIndex = 0;
+  var dataPlotNextId = 1;
+  var dataPlotSelectedRowIndex = -1;
+  var dataPlotUIState = {
+    title: '', xlabel: '', ylabel: '',
+    lineColorTheme: 'multicolor',
+    legend: 'top-left', aspectRatio: 'auto',
+    xMin: '', xMax: '', yMin: '', yMax: '',
+    xScale: 'linear', yScale: 'linear'
+  };
+
   function getDataPlotOptions() {
     var themeEl = document.getElementById('dp-color-theme');
     var themeId = (themeEl && themeEl.value) || 'multicolor';
@@ -3942,14 +4198,65 @@
     };
   }
 
-  var dataPlotDatasets = [];
-  var dataPlotCurrentIndex = 0;
-  var dataPlotNextId = 1;
-  var dataPlotSelectedRowIndex = -1;
-  var dataPlotUIState = {
-    title: '', xlabel: '', ylabel: '', colorTheme: 'multicolor', legend: 'top-left', aspectRatio: 'auto',
-    xMin: '', xMax: '', yMin: '', yMax: '', xScale: 'linear', yScale: 'linear'
-  };
+  function dataPlotNormalizeDataset(d) {
+    if (!d) return;
+    d.kind = 'xy';
+  }
+
+  function normalizeDataPlotDatasetsForLayout() {
+    if (dataPlotUIState.lineColorTheme == null && typeof dataPlotUIState.colorTheme === 'string') {
+      dataPlotUIState.lineColorTheme = dataPlotUIState.colorTheme;
+    }
+    if (dataPlotUIState.lineColorTheme == null) dataPlotUIState.lineColorTheme = 'multicolor';
+    for (var j = 0; j < dataPlotDatasets.length; j++) {
+      var dj = dataPlotDatasets[j];
+      if (dj.kind === 'image') {
+        dj.kind = 'xy';
+        dj.x = [NaN, NaN, NaN];
+        dj.y = [NaN, NaN, NaN];
+        delete dj.z;
+        delete dj.cellX;
+        delete dj.cellY;
+        delete dj.rawZ;
+        delete dj.rawCellX;
+        delete dj.rawCellY;
+        delete dj.rawWidth;
+        delete dj.rawHeight;
+        delete dj.imageBinsW;
+        delete dj.imageBinsH;
+        delete dj.width;
+        delete dj.height;
+        delete dj.imageColormap;
+        delete dj.imageLogZ;
+        delete dj.imageExtent;
+        if (!dj.displayMode) dj.displayMode = 'line';
+        if (dj.fitType === undefined) dj.fitType = 'none';
+      }
+      dataPlotNormalizeDataset(dj);
+    }
+  }
+
+  function fillDataPlotColorThemeSelect() {
+    var sel = document.getElementById('dp-color-theme');
+    if (!sel) return;
+    sel.innerHTML = '<option value="multicolor">Multicolor</option><option value="orange">Orange</option><option value="cyan">Cyan</option><option value="green">Green</option><option value="pink">Pink</option><option value="yellow">Yellow</option><option value="red">Red</option><option value="black">Black</option>';
+    sel.value = dataPlotUIState.lineColorTheme || 'multicolor';
+  }
+
+  function refreshDataPlotLayoutChrome() {
+    fillDataPlotColorThemeSelect();
+  }
+
+  function refreshDataPlotTableMode() {
+    var d = dataPlotDatasets[dataPlotCurrentIndex];
+    if (!d) return;
+    dataPlotNormalizeDataset(d);
+    var theadTr = document.querySelector('#dp-input-wrap thead tr');
+    if (!theadTr) return;
+    theadTr.innerHTML = '<th>#</th><th>X</th><th>Y</th>';
+    setDataPlotInputTable(d.x, d.y);
+    refreshDataPlotLayoutChrome();
+  }
 
   function getDataPlotTableData() {
     var tbody = document.getElementById('dp-input-tbody');
@@ -4005,14 +4312,20 @@
   }
 
   function setDataPlotInputTable(xArr, yArr) {
+    var theadTr = document.querySelector('#dp-input-wrap thead tr');
+    if (theadTr) theadTr.innerHTML = '<th>#</th><th>X</th><th>Y</th>';
     var tbody = document.getElementById('dp-input-tbody');
     if (!tbody) return;
-    var n = Math.min(xArr.length, yArr.length);
+    var nx = xArr && xArr.length ? xArr.length : 0;
+    var ny = yArr && yArr.length ? yArr.length : 0;
+    var n = Math.max(3, nx, ny);
     function esc(v) { return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
     var html = '';
     for (var i = 0; i < n; i++) {
-      var xVal = isFinite(xArr[i]) ? esc(formatNumber(xArr[i])) : '';
-      var yVal = isFinite(yArr[i]) ? esc(formatNumber(yArr[i])) : '';
+      var xv = i < nx ? xArr[i] : NaN;
+      var yv = i < ny ? yArr[i] : NaN;
+      var xVal = isFinite(xv) ? esc(formatNumber(xv)) : '';
+      var yVal = isFinite(yv) ? esc(formatNumber(yv)) : '';
       html += '<tr><td class="dp-row-num">' + (i + 1) + '</td><td><input type="text" class="dp-x-cell" inputmode="decimal" value="' + xVal + '"></td><td><input type="text" class="dp-y-cell" inputmode="decimal" value="' + yVal + '"></td></tr>';
     }
     tbody.innerHTML = html;
@@ -4020,11 +4333,12 @@
   }
 
   function saveCurrentTableToDataset() {
+    var d = dataPlotDatasets[dataPlotCurrentIndex];
+    if (!d) return;
+    dataPlotNormalizeDataset(d);
     var data = getDataPlotTableData();
-    if (dataPlotDatasets[dataPlotCurrentIndex]) {
-      dataPlotDatasets[dataPlotCurrentIndex].x = data.x;
-      dataPlotDatasets[dataPlotCurrentIndex].y = data.y;
-    }
+    d.x = data.x;
+    d.y = data.y;
   }
 
   function refreshDataPlotDatasetSelector() {
@@ -4060,11 +4374,13 @@
     if (nameEl && dataPlotDatasets[dataPlotCurrentIndex]) dataPlotDatasets[dataPlotCurrentIndex].name = nameEl.value.trim() || dataPlotDatasets[dataPlotCurrentIndex].name;
     dataPlotCurrentIndex = Math.max(0, Math.min(index, dataPlotDatasets.length - 1));
     var d = dataPlotDatasets[dataPlotCurrentIndex];
+    dataPlotNormalizeDataset(d);
     if (!d.displayMode) d.displayMode = 'line';
     if (d.fitType === undefined) d.fitType = 'none';
     var fitEl = document.getElementById('dp-fit');
     if (fitEl) fitEl.value = d.fitType || 'none';
-    setDataPlotInputTable(d.x, d.y);
+    syncInputChoiceButtons('dp-fit');
+    refreshDataPlotTableMode();
     refreshDataPlotDatasetSelector();
     refreshDatasetNameInput();
     refreshDisplayButtons();
@@ -4076,14 +4392,17 @@
     var nameEl = document.getElementById('dp-dataset-name');
     if (nameEl && dataPlotDatasets[dataPlotCurrentIndex]) dataPlotDatasets[dataPlotCurrentIndex].name = nameEl.value.trim() || dataPlotDatasets[dataPlotCurrentIndex].name;
     var id = dataPlotNextId++;
-    dataPlotDatasets.push({ id: id, name: 'Dataset ' + (dataPlotDatasets.length + 1), x: [], y: [], displayMode: 'line', fitType: 'none' });
+    var empty3 = [NaN, NaN, NaN];
+    dataPlotDatasets.push({ id: id, kind: 'xy', name: 'Dataset ' + (dataPlotDatasets.length + 1), x: empty3.slice(), y: empty3.slice(), displayMode: 'line', fitType: 'none' });
     dataPlotCurrentIndex = dataPlotDatasets.length - 1;
-    setDataPlotInputTable([], []);
+    var dNew = dataPlotDatasets[dataPlotCurrentIndex];
+    refreshDataPlotTableMode();
     refreshDataPlotDatasetSelector();
     refreshDatasetNameInput();
     refreshDisplayButtons();
     var fitElAdd = document.getElementById('dp-fit');
     if (fitElAdd) fitElAdd.value = 'none';
+    syncInputChoiceButtons('dp-fit');
     runDataPlot();
   }
 
@@ -4093,7 +4412,9 @@
     dataPlotDatasets.splice(dataPlotCurrentIndex, 1);
     dataPlotCurrentIndex = Math.min(dataPlotCurrentIndex, dataPlotDatasets.length - 1);
     var d = dataPlotDatasets[dataPlotCurrentIndex];
-    setDataPlotInputTable(d.x, d.y);
+    refreshDataPlotTableMode();
+    var fitElRm = document.getElementById('dp-fit');
+    if (fitElRm && d) { fitElRm.value = d.fitType || 'none'; syncInputChoiceButtons('dp-fit'); }
     refreshDataPlotDatasetSelector();
     refreshDatasetNameInput();
     refreshDisplayButtons();
@@ -4101,10 +4422,12 @@
   }
 
   function removeDataPlotRow() {
+    var d = dataPlotDatasets[dataPlotCurrentIndex];
+    if (!d) return;
     var tbody = document.getElementById('dp-input-tbody');
     if (!tbody) return;
     var rows = tbody.querySelectorAll('tr');
-    if (rows.length <= 1) return;
+    if (rows.length <= 3) return;
     var indexToRemove = dataPlotSelectedRowIndex >= 0 && dataPlotSelectedRowIndex < rows.length
       ? dataPlotSelectedRowIndex
       : rows.length - 1;
@@ -4119,6 +4442,8 @@
   function runDataPlot() {
     if (currentToolId !== 'data-plot' || !toolResultsEl) return;
     saveCurrentTableToDataset();
+    var ctRun = document.getElementById('dp-color-theme');
+    if (ctRun) dataPlotUIState.lineColorTheme = ctRun.value || 'multicolor';
     var nameEl = document.getElementById('dp-dataset-name');
     if (nameEl && dataPlotDatasets[dataPlotCurrentIndex]) {
       var n = nameEl.value.trim();
@@ -4127,6 +4452,7 @@
     }
     var plotContainer = document.getElementById('dp-plot');
     var seriesList = dataPlotDatasets.map(function (d) {
+      dataPlotNormalizeDataset(d);
       var xf = [], yf = [];
       for (var i = 0; i < (d.x && d.x.length) || 0; i++) {
         if (isFinite(d.x[i]) && isFinite(d.y[i])) { xf.push(d.x[i]); yf.push(d.y[i]); }
@@ -4139,9 +4465,12 @@
     var opts = getDataPlotOptions();
     var themeEl = document.getElementById('dp-color-theme');
     var themeId = (themeEl && themeEl.value) ? themeEl.value : 'multicolor';
-    var N = seriesList.length;
-    if (themeId !== 'multicolor' && N > 0 && opts.colors && opts.colors.length > 0) {
-      opts.colors = sampleColorScale(opts.colors, N);
+    var lineSeriesCount = 0;
+    for (var lsi = 0; lsi < seriesList.length; lsi++) {
+      if (seriesList[lsi].x && seriesList[lsi].x.length) lineSeriesCount++;
+    }
+    if (themeId !== 'multicolor' && lineSeriesCount > 0 && opts.colors && opts.colors.length > 0) {
+      opts.colors = sampleColorScale(opts.colors, lineSeriesCount);
     }
     var fitEl = document.getElementById('dp-fit');
     var fitType = (fitEl && fitEl.value) ? fitEl.value : 'none';
@@ -4152,6 +4481,7 @@
     var fitsPerDataset = [];
     for (var fi = 0; fi < dataPlotDatasets.length; fi++) {
       var di = dataPlotDatasets[fi];
+      dataPlotNormalizeDataset(di);
       var ft = (di && di.fitType) ? di.fitType : 'none';
       if (ft !== 'none' && di && di.x && di.y) {
         var xf = [], yf = [];
@@ -4206,7 +4536,8 @@
   }
 
   function getDataPlotAxisScale(axis) {
-    var wrap = document.querySelector('.plot-scale-btns[data-axis="' + axis + '"]');
+    var root = toolResultsEl || document;
+    var wrap = root.querySelector('.plot-scale-btns[data-axis="' + axis + '"]');
     if (!wrap) return 'linear';
     var active = wrap.querySelector('.plot-scale-btn.is-active');
     return (active && active.getAttribute('data-scale')) || 'linear';
@@ -4261,6 +4592,7 @@
     wrap.addEventListener('keydown', function (e) {
       var target = e.target;
       if (!target || (!target.classList.contains('dp-x-cell') && !target.classList.contains('dp-y-cell'))) return;
+      if (target.readOnly) return;
       var col = target.classList.contains('dp-x-cell') ? 'x' : 'y';
       if (e.ctrlKey && e.key === 'c') {
         var values = getDataPlotTableColumn(col);
@@ -4295,7 +4627,8 @@
   function addDataPlotRow() {
     saveCurrentTableToDataset();
     var d = dataPlotDatasets[dataPlotCurrentIndex];
-    if (!d || !d.x) return;
+    if (!d) return;
+    if (!d.x) return;
     var n = d.x.length;
     var insertIndex = (dataPlotSelectedRowIndex >= 0 && dataPlotSelectedRowIndex < n)
       ? dataPlotSelectedRowIndex + 1
@@ -4318,7 +4651,9 @@
   function captureDataPlotUIState() {
     saveCurrentTableToDataset();
     var nameEl = document.getElementById('dp-dataset-name');
-    if (nameEl && dataPlotDatasets[dataPlotCurrentIndex]) dataPlotDatasets[dataPlotCurrentIndex].name = nameEl.value.trim() || dataPlotDatasets[dataPlotCurrentIndex].name;
+    if (nameEl && dataPlotDatasets[dataPlotCurrentIndex]) {
+      dataPlotDatasets[dataPlotCurrentIndex].name = nameEl.value.trim() || dataPlotDatasets[dataPlotCurrentIndex].name;
+    }
     var titleEl = document.getElementById('dp-title');
     if (titleEl) {
       dataPlotUIState.title = titleEl.value || '';
@@ -4327,7 +4662,7 @@
       var yl = document.getElementById('dp-ylabel');
       dataPlotUIState.ylabel = (yl && yl.value) ? yl.value : '';
       var ct = document.getElementById('dp-color-theme');
-      dataPlotUIState.colorTheme = (ct && ct.value) ? ct.value : 'multicolor';
+      if (ct) dataPlotUIState.lineColorTheme = ct.value || 'multicolor';
       var leg = document.getElementById('dp-legend');
       dataPlotUIState.legend = (leg && leg.value) ? leg.value : 'top-left';
     }
@@ -4360,7 +4695,7 @@
     dataPlotUIState.title = '';
     dataPlotUIState.xlabel = '';
     dataPlotUIState.ylabel = '';
-    dataPlotUIState.colorTheme = 'multicolor';
+    dataPlotUIState.lineColorTheme = 'multicolor';
     dataPlotUIState.legend = 'top-left';
     dataPlotUIState.xMin = '';
     dataPlotUIState.xMax = '';
@@ -4369,7 +4704,7 @@
     dataPlotUIState.xScale = 'linear';
     dataPlotUIState.yScale = 'linear';
     dataPlotDatasets.length = 0;
-    dataPlotDatasets.push({ id: 0, name: 'Dataset 1', x: [NaN, NaN, NaN], y: [NaN, NaN, NaN], displayMode: 'line', fitType: 'none' });
+    dataPlotDatasets.push({ id: 0, kind: 'xy', name: 'Dataset 1', x: [NaN, NaN, NaN], y: [NaN, NaN, NaN], displayMode: 'line', fitType: 'none' });
     dataPlotNextId = 1;
     dataPlotCurrentIndex = 0;
     initDataPlot();
@@ -4377,22 +4712,19 @@
 
   function initDataPlot() {
     if (dataPlotDatasets.length === 0) {
-      dataPlotDatasets.push({ id: 0, name: 'Dataset 1', x: [NaN, NaN, NaN], y: [NaN, NaN, NaN], displayMode: 'line', fitType: 'none' });
+      dataPlotDatasets.push({ id: 0, kind: 'xy', name: 'Dataset 1', x: [NaN, NaN, NaN], y: [NaN, NaN, NaN], displayMode: 'line', fitType: 'none' });
       dataPlotNextId = 1;
       dataPlotCurrentIndex = 0;
     } else {
       dataPlotCurrentIndex = Math.min(dataPlotCurrentIndex, dataPlotDatasets.length - 1);
     }
-    var d = dataPlotDatasets[dataPlotCurrentIndex];
-    var initialRows = '';
-    for (var i = 0; i < d.x.length; i++) {
-      var xVal = isFinite(d.x[i]) ? d.x[i] : '';
-      var yVal = isFinite(d.y[i]) ? d.y[i] : '';
-      initialRows += '<tr><td class="dp-row-num">' + (i + 1) + '</td><td><input type="text" class="dp-x-cell" inputmode="decimal" value="' + xVal + '"></td><td><input type="text" class="dp-y-cell" inputmode="decimal" value="' + yVal + '"></td></tr>';
-    }
+    normalizeDataPlotDatasetsForLayout();
+    for (var ndi = 0; ndi < dataPlotDatasets.length; ndi++) dataPlotNormalizeDataset(dataPlotDatasets[ndi]);
     toolInputsEl.innerHTML =
       '<div class="data-plot-inputs">' +
       '<div class="dp-inputs-header"><button type="button" class="dp-reset-defaults-btn" id="dp-reset-defaults">Reset</button></div>' +
+      '<div class="dp-section">' +
+      '<h3 class="dp-section-heading">Plot appearance</h3>' +
       '<div class="dp-plot-options">' +
       '<div class="dp-plot-row">' +
       '<span class="dp-plot-row-label">Title</span>' +
@@ -4408,9 +4740,7 @@
       '</div>' +
       '<div class="dp-plot-row">' +
       '<span class="dp-plot-row-label">Color theme</span>' +
-      '<select id="dp-color-theme">' +
-      '<option value="multicolor">Multicolor</option><option value="orange">Orange</option><option value="cyan">Cyan</option><option value="green">Green</option><option value="pink">Pink</option><option value="yellow">Yellow</option><option value="red">Red</option><option value="black">Black</option>' +
-      '</select>' +
+      '<select id="dp-color-theme"></select>' +
       '</div>' +
       '<div class="dp-plot-row">' +
       '<span class="dp-plot-row-label">Legend</span>' +
@@ -4429,7 +4759,10 @@
       '</select></div>' +
       '</div>' +
       '</div>' +
+      '</div>' +
       '<div class="dp-plot-divider"></div>' +
+      '<div class="dp-section">' +
+      '<h3 class="dp-section-heading">Data</h3>' +
       '<div class="dp-plot-row dp-dataset-row">' +
       '<span class="dp-plot-row-label">Dataset</span>' +
       '<select id="dp-dataset-select"></select>' +
@@ -4449,32 +4782,41 @@
       '<button type="button" class="dp-display-btn" data-dp-display="filled">Filled</button>' +
       '</div>' +
       '</div>' +
-      '<div class="dp-plot-row">' +
-      '<span class="dp-plot-row-label">Fit</span>' +
-      '<select id="dp-fit">' +
-      '<option value="none">None</option><option value="mean">Mean (constant)</option><option value="line">Line</option>' +
-      '<option value="poly2">Poly 2</option><option value="poly3">Poly 3</option>' +
-      '</select>' +
+      '<div class="dp-plot-row dp-plot-row-fit dp-plot-row-choice-stack">' +
+      '<div class="tool-input-choice-section-label">Fit</div>' +
+      inputChoiceButtonsHtml('dp-fit', [
+        { value: 'none', label: 'None' },
+        { value: 'mean', label: 'Mean (constant)' },
+        { value: 'line', label: 'Line' },
+        { value: 'poly2', label: 'Poly 2' },
+        { value: 'poly3', label: 'Poly 3' }
+      ], 'none', 'Fit') +
       '</div>' +
       '<div class="dp-fit-results-wrap" id="dp-fit-results-wrap"><pre class="dp-fit-results" id="dp-fit-results"></pre></div>' +
       '<div class="dp-plot-row dp-plot-row-file">' +
       '<span class="dp-plot-row-label">Load file</span>' +
-      '<input type="file" id="dp-file" accept=".csv,.txt,text/csv,text/plain">' +
+      '<input type="file" id="dp-file" accept=".csv,.txt,.dat,.h5,text/csv,text/plain,application/x-hdf">' +
       '</div>' +
       '<div id="dp-input-wrap" class="dp-input-table-wrap">' +
-      '<table class="dp-input-table"><thead><tr><th>#</th><th>X</th><th>Y</th></tr></thead><tbody id="dp-input-tbody">' + initialRows + '</tbody></table>' +
+      '<table class="dp-input-table"><thead><tr><th>#</th><th>X</th><th>Y</th></tr></thead><tbody id="dp-input-tbody"></tbody></table>' +
       '<div class="dp-table-buttons">' +
       '<button type="button" class="dp-add-row" id="dp-add-row">Add row</button>' +
-      '<button type="button" class="dp-remove-row" id="dp-remove-row">Remove row</button>' +
+      '<button type="button" class="dp-remove-row" id="dp-remove-row">Delete row</button>' +
       '</div>' +
-      '<p class="dp-table-hint">Ctrl+C / Ctrl+V from any cell to copy or paste the whole column.</p>' +
+      '</div>' +
       '</div>' +
       '</div>';
     toolResultsEl.innerHTML = buildToolResultsPanel({
       viewButtons: [{ view: 'plot', label: 'Plot' }],
       resultsId: 'dp-results',
       resultsContent: '',
-      plotPanes: [{ dataPlot: 'plot', plotId: 'dp-plot', controlsPrefix: 'data-plot', scaleButtons: true }]
+      plotPanes: [{
+        dataPlot: 'plot',
+        plotId: 'dp-plot',
+        controlsPrefix: 'data-plot',
+        scaleButtons: true,
+        includeZControls: false
+      }]
     });
     var plotContent = toolResultsEl.querySelector('.tool-plot-content');
     var plotPane = toolResultsEl.querySelector('.tool-plot-pane');
@@ -4485,18 +4827,20 @@
     refreshDataPlotDatasetSelector();
     refreshDatasetNameInput();
     refreshDisplayButtons();
+    var fitElInit0 = document.getElementById('dp-fit');
+    if (fitElInit0 && dataPlotDatasets[dataPlotCurrentIndex]) {
+      fitElInit0.value = dataPlotDatasets[dataPlotCurrentIndex].fitType || 'none';
+    }
+    syncInputChoiceButtons('dp-fit');
+    refreshDataPlotTableMode();
     var titleEl = document.getElementById('dp-title');
     if (titleEl) titleEl.value = dataPlotUIState.title || '';
     var xl = document.getElementById('dp-xlabel');
     if (xl) xl.value = dataPlotUIState.xlabel || '';
     var yl = document.getElementById('dp-ylabel');
     if (yl) yl.value = dataPlotUIState.ylabel || '';
-    var ct = document.getElementById('dp-color-theme');
-    if (ct && dataPlotUIState.colorTheme) ct.value = dataPlotUIState.colorTheme;
     var leg = document.getElementById('dp-legend');
     if (leg && dataPlotUIState.legend) leg.value = dataPlotUIState.legend;
-    var fitElInit = document.getElementById('dp-fit');
-    if (fitElInit && dataPlotDatasets[dataPlotCurrentIndex]) fitElInit.value = dataPlotDatasets[dataPlotCurrentIndex].fitType || 'none';
     var rxMin = document.getElementById('data-plot-xmin');
     if (rxMin) rxMin.value = dataPlotUIState.xMin || '';
     var rxMax = document.getElementById('data-plot-xmax');
@@ -4517,13 +4861,36 @@
       fileEl.addEventListener('change', function () {
         var f = fileEl.files && fileEl.files[0];
         if (!f) { runDataPlot(); return; }
+        var n = (f.name || '').toLowerCase();
+        var fk = dataPlotFileLoadKind(n);
+        if (fk === 'raster-image') {
+          dataPlotShowFileLoadMessage('Image files (PNG, JPEG, and similar) are not supported. Use CSV or TXT for X,Y columns.');
+          fileEl.value = '';
+          return;
+        }
+        if (fk === 'h5') {
+          dataPlotShowFileLoadMessage('HDF5 (.h5) cannot be read in this tool. Export to CSV or TXT.');
+          fileEl.value = '';
+          return;
+        }
+        if (fk === 'unsupported') {
+          dataPlotShowFileLoadMessage('Unsupported file type. Use .csv, .txt, .dat, or a no-extension text file with two columns.');
+          fileEl.value = '';
+          return;
+        }
         var reader = new FileReader();
         reader.onload = function () {
           var parsed = parseCsvToXY(reader.result, false);
-          setDataPlotInputTable(parsed.x, parsed.y);
+          var dc2 = dataPlotDatasets[dataPlotCurrentIndex];
+          if (dc2) setDataPlotInputTable(parsed.x, parsed.y);
+          dataPlotClearFileLoadMessage();
           runDataPlot();
         };
+        reader.onerror = function () {
+          dataPlotShowFileLoadMessage('Failed to read the file.');
+        };
         reader.readAsText(f);
+        fileEl.value = '';
       });
     }
     var sel = document.getElementById('dp-dataset-select');
@@ -4543,17 +4910,17 @@
     document.getElementById('dp-add-row').addEventListener('click', addDataPlotRow);
     document.getElementById('dp-remove-row').addEventListener('click', removeDataPlotRow);
     bindDataPlotTableInputs();
+    bindChoiceButtons('dp-fit');
     bindInputsToRun(['dp-color-theme', 'dp-legend', 'dp-xlabel', 'dp-ylabel', 'dp-title', 'dp-dataset-name', 'dp-fit', 'data-plot-xmin', 'data-plot-xmax', 'data-plot-ymin', 'data-plot-ymax', 'plot-aspect-ratio'], runDataPlot);
     document.getElementById('dp-legend').addEventListener('change', runDataPlot);
     bindPlotGridButton(runDataPlot);
     (toolResultsEl.querySelectorAll('.plot-scale-btn') || []).forEach(function (btn) {
       btn.addEventListener('click', function () {
         var wrap = btn.closest('.plot-scale-btns');
-        if (wrap) {
-          wrap.querySelectorAll('.plot-scale-btn').forEach(function (b) { b.classList.remove('is-active'); });
-          btn.classList.add('is-active');
-          runDataPlot();
-        }
+        if (!wrap) return;
+        wrap.querySelectorAll('.plot-scale-btn').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        runDataPlot();
       });
     });
     runDataPlot();
@@ -4562,8 +4929,11 @@
   function initLaserPulse() {
     toolInputsEl.innerHTML =
       toolInputsHeaderHtml('lp-reset-defaults') +
-      '<table class="tool-input-table"><tbody>' +
-      inputRow('Spot size type', '', '<select id="lp-spot-type"><option value="FWHM" selected>' + S.symbolHtml('FWHM') + '</option><option value="1e2">1/e² (diameter)</option></select>', '') +
+      toolInputTableOpen() +
+      inputChoiceSectionRow('Spot size type', inputChoiceButtonsHtml('lp-spot-type', [
+        { value: 'FWHM', label: S.symbolHtml('FWHM') },
+        { value: '1e2', label: '1/e² (diameter)' }
+      ], 'FWHM', 'Spot size type')) +
       inputRow('Spot X', S.symbolHtml('x'), '<input type="text" id="lp-spot-x" inputmode="decimal" placeholder="e.g. 10" value="10">', 'μm') +
       inputRow('Spot Y', S.symbolHtml('y'), '<input type="text" id="lp-spot-y" inputmode="decimal" placeholder="e.g. 10" value="10">', 'μm') +
       inputRow(S.meaning('lambda'), S.symbolHtml('lambda'), '<input type="text" id="lp-wavelength" inputmode="decimal" placeholder="e.g. 800" value="800">', '<select id="lp-wavelength-unit"><option value="nm" selected>nm</option><option value="eV">eV</option></select>') +
@@ -4596,6 +4966,7 @@
       ]
     });
     runLaserPulse();
+    bindChoiceButtons('lp-spot-type');
     bindInputsToRun([
       'lp-spot-type', 'lp-spot-x', 'lp-spot-y', 'lp-wavelength', 'lp-duration', 'lp-energy', 'lp-rep-rate',
       'lp2d-xmin', 'lp2d-xmax', 'lp2d-ymin', 'lp2d-ymax',
@@ -4728,7 +5099,7 @@
       });
     }
     var stored = null;
-    try { stored = localStorage.getItem('scirepo-accent'); } catch (e) { /* ignore */ }
+    try { stored = localStorage.getItem('scireso-accent'); } catch (e) { /* ignore */ }
     ACCENT_PRESETS.forEach(function (preset) {
       var btn = document.createElement('button');
       btn.type = 'button';
@@ -4762,7 +5133,7 @@
   }
 
   function initSymbols() {
-    var SYM = window.SCIREPO_SYMBOLS;
+    var SYM = window.SCIRESO_SYMBOLS;
     var toggleEl = document.getElementById('symbols-toggle');
     var panelEl = document.getElementById('symbols-panel');
     var listEl = document.getElementById('symbols-list');
@@ -4810,6 +5181,7 @@
       }
       var btn = e.target && e.target.closest && e.target.closest('.tool-view-btn');
       if (!btn) return;
+      if (btn.hasAttribute('data-value') && !btn.hasAttribute('data-view')) return;
       var view = btn.getAttribute('data-view');
       if (!view) return;
       var container = btn.closest('#tool-results') || btn.closest('.tool-results');

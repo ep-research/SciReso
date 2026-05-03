@@ -1,6 +1,6 @@
 /* Photoionization / photoelectric effect: KE, recoil, PCI shift, angular distribution */
 
-window.SCIREPO_PHOTOIONIZATION = (function () {
+window.SCIRESO_PHOTOIONIZATION = (function () {
   'use strict';
 
   var M_E_KG = 9.1093837015e-31;

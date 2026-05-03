@@ -1,6 +1,6 @@
 /* Bragg diffraction: n λ = 2 d sin θ */
 
-window.SCIREPO_BRAGG = (function () {
+window.SCIRESO_BRAGG = (function () {
   'use strict';
 
   var H = 6.62607015e-34;   // J·s

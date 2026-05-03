@@ -1,6 +1,6 @@
 /* Compton scattering: scattered energy, wavelength shift, recoil KE, angle vs energy */
 
-window.SCIREPO_COMPTON = (function () {
+window.SCIRESO_COMPTON = (function () {
   'use strict';
 
   var M_E_C2_EV = 510998.95;

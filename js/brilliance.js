@@ -1,6 +1,6 @@
 /* Spectral brilliance / brightness estimator */
 
-window.SCIREPO_BRILLIANCE = (function () {
+window.SCIRESO_BRILLIANCE = (function () {
   'use strict';
 
   function parseNum(val) {

@@ -1,6 +1,6 @@
 /* Decay / half-life: N(t) = N0 * 2^(-t/t_half), A = λN, λ = ln(2)/t_half */
 
-window.SCIREPO_DECAY = (function () {
+window.SCIRESO_DECAY = (function () {
   'use strict';
 
   var LN2 = Math.LN2;
@@ -38,7 +38,7 @@ window.SCIREPO_DECAY = (function () {
     var tHalfUnit = params.t_half_unit || 's';
     var tUnit = params.t_unit || 's';
 
-    var SYM = window.SCIREPO_SYMBOLS;
+    var SYM = window.SCIRESO_SYMBOLS;
     var sym = SYM ? function (id) { return SYM.symbol(id); } : function (id) { return id; };
     if (N0 == null || isNaN(N0) || N0 < 0) {
       return { N: NaN, A_Bq: NaN, lambda_s: NaN, halfLivesElapsed: NaN, error: 'Initial amount ' + sym('N0') + ' must be a non-negative number.' };

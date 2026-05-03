@@ -1,4 +1,4 @@
-/* SCIREPO — Deep black with neon blue accents (default); light theme via body[data-theme="light"] */
+/* SCIRESO — Deep black with neon blue accents (default); light theme via body[data-theme="light"] */
 
 :root {
   --bg: #0d0d0d;
@@ -542,9 +542,25 @@ body[data-theme="light"] .settings-toggle:hover {
   border-radius: 3px;
   color: var(--text);
 }
+.data-plot-inputs .dp-section {
+  margin: 0;
+}
+.data-plot-inputs .dp-section-heading {
+  margin: 0 0 0.35rem 0;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted, var(--text));
+  opacity: 0.9;
+}
+.data-plot-inputs .dp-section:first-of-type .dp-section-heading {
+  margin-top: 0;
+}
 .data-plot-inputs .dp-plot-divider {
   border-top: 1px solid var(--border);
-  margin: 0.4rem 0 0.35rem 0;
+  margin: 0.55rem 0 0.45rem 0;
 }
 .data-plot-inputs select,
 .data-plot-inputs input[type="file"] {
@@ -588,7 +604,8 @@ body[data-theme="light"] .settings-toggle:hover {
   width: 1.5rem;
 }
 .data-plot-inputs .dp-input-table input.dp-x-cell,
-.data-plot-inputs .dp-input-table input.dp-y-cell {
+.data-plot-inputs .dp-input-table input.dp-y-cell,
+.data-plot-inputs .dp-input-table input.dp-z-cell {
   width: 100%;
   min-width: 0;
   padding: 0.12rem 0.25rem;
@@ -604,11 +621,6 @@ body[data-theme="light"] .settings-toggle:hover {
   outline: none;
   border-color: var(--accent-warm);
   box-shadow: 0 0 0 1px var(--accent-warm-dim);
-}
-.data-plot-inputs .dp-table-hint {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin: 0.25rem 0 0;
 }
 .data-plot-inputs .dp-table-buttons {
   display: flex;
@@ -671,6 +683,7 @@ body[data-theme="light"] .settings-toggle:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
+
 .data-plot-inputs .dp-display-row .dp-display-btns {
   flex: 1;
   display: flex;
@@ -813,15 +826,16 @@ body[data-theme="light"] .settings-toggle:hover {
   margin-bottom: 0;
 }
 
-.about-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2.5rem;
+/* About directory: Data analysis | Physics & Chemistry (two columns on wide viewports) */
+.about-content.about-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem 2.75rem;
+  align-items: start;
 }
 
-.about-col {
-  flex: 1 1 220px;
-  max-width: 320px;
+.about-content.about-columns .about-col {
+  min-width: 0;
 }
 
 .about-col p {
@@ -869,11 +883,8 @@ body[data-theme="light"] .settings-toggle:hover {
 }
 
 @media (max-width: 768px) {
-  .about-content {
-    display: block;
-  }
-  .about-col {
-    max-width: none;
+  .about-content.about-columns {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -885,6 +896,20 @@ body[data-theme="light"] .settings-toggle:hover {
   border-collapse: collapse;
   font-size: var(--table-font-size);
   table-layout: fixed;
+}
+
+/* Explicit columns so colspan choice rows do not collapse desc/sym/val/unit widths */
+.tool-input-table col.tic-desc {
+  width: var(--table-col-desc);
+}
+.tool-input-table col.tic-sym {
+  width: var(--table-col-sym);
+}
+.tool-input-table col.tic-val {
+  width: var(--table-col-val);
+}
+.tool-input-table col.tic-unit {
+  width: var(--table-col-unit);
 }
 .conversion-table {
   width: calc(var(--table-col-desc-result) + var(--table-col-sym) + var(--table-col-val) + var(--table-col-unit));
@@ -1133,6 +1158,78 @@ body[data-theme="light"] .settings-toggle:hover {
   color: var(--text);
   border-color: var(--accent);
   background: rgba(107, 155, 209, 0.1);
+}
+
+/* Segmented choices: label line, then full-width button row (table) or stacked (data plot) */
+.tool-input-choice-section td.tool-input-choice-section-cell {
+  padding: var(--table-cell-padding);
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.tool-input-choice-section-label {
+  display: block;
+  width: 100%;
+  font-size: var(--table-font-size);
+  color: var(--text-muted);
+  margin: 0 0 0.35rem 0;
+  line-height: 1.35;
+  font-weight: normal;
+  text-align: left;
+}
+
+.tool-input-choice-section-cell .tool-input-choice-wrap {
+  width: 100%;
+  text-align: left;
+}
+
+.tool-input-choice-wrap {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+}
+
+.tool-input-choice-btns {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 0.2rem 0.28rem;
+  margin-bottom: 0;
+  justify-content: flex-start;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.tool-input-choice-btns .tool-view-btn {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.data-plot-inputs .dp-plot-row-choice-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.28rem;
+}
+
+.data-plot-inputs .dp-plot-row-choice-stack .tool-input-choice-section-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+.data-plot-inputs .dp-plot-row-choice-stack .tool-input-choice-wrap {
+  width: 100%;
+}
+
+.data-plot-inputs .dp-plot-row-choice-stack .tool-input-choice-btns {
+  width: 100%;
+  margin-bottom: 0;
 }
 
 .tool-equations-content {
@@ -1911,7 +2008,8 @@ body[data-theme="light"] .settings-toggle:hover {
   }
 
   /* Allow input descriptions to wrap on narrow screens */
-  .tool-input-table td.input-desc {
+  .tool-input-table td.input-desc,
+  .tool-input-choice-section-label {
     white-space: normal;
   }
 

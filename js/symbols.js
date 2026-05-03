@@ -1,6 +1,8 @@
-/* SCIREPO — Central symbol registry. Single source for (meaning, symbol). No units. */
+/* SCIRESO — Central symbol registry. Single source for (meaning, symbol). No units.
+ * Each entry must have a unique rendered symbol: disambiguate with subscripts in the
+ * symbol string (underscore → <sub> in symbolHtml), e.g. λ_mfp vs λ for wavelength. */
 
-window.SCIREPO_SYMBOLS = (function () {
+window.SCIRESO_SYMBOLS = (function () {
   'use strict';
 
   var DEFS = {
@@ -12,6 +14,7 @@ window.SCIREPO_SYMBOLS = (function () {
     I0:          { meaning: 'Intensity (initial)',  symbol: 'I₀' },
 
     alpha:       { meaning: 'Absorption coeff. (linear)', symbol: 'α' },
+    lambda_mfp:  { meaning: 'Mean free path',              symbol: 'λ_mfp' },
     a:           { meaning: 'Absorption coeff. (mass)',   symbol: 'a' },
     epsilon:     { meaning: 'Absorption coeff. (molar)',  symbol: 'ε' },
     sigma:       { meaning: 'Cross section',               symbol: 'σ' },

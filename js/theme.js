@@ -1,6 +1,6 @@
 /* Shared UI theme: plot sizes, padding, colors, fonts */
 
-window.SCIREPO_THEME = (function () {
+window.SCIRESO_THEME = (function () {
   'use strict';
 
   var THEMES = {

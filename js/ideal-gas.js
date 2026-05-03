@@ -1,6 +1,6 @@
 /* Ideal gas: PV = nRT, R = 8.314462618 J/(mol·K) = 8.314462618 Pa·m³/(mol·K) */
 
-window.SCIREPO_IDEAL_GAS = (function () {
+window.SCIRESO_IDEAL_GAS = (function () {
   'use strict';
 
   var R = 8.314462618; // Pa·m³/(mol·K)

@@ -51,6 +51,13 @@ window.SCIRESULTS_ABSORPTION = (function () {
       out.rho = rho;
       out.M = M;
       out.c = c;
+    } else if (coefType === 'mfp') {
+      var lambdaCm = thicknessToCm(coefValue, coefUnit || 'nm');
+      if (isNaN(lambdaCm) || lambdaCm <= 0) { out.error = 'Enter a positive mean free path.'; return out; }
+      alpha = 1 / lambdaCm;
+      out.rho = rho;
+      out.M = M;
+      out.c = c;
     } else {
       var nGiven = [rho, M, c].filter(function (x) { return x > 0 && !isNaN(x); }).length;
       if (nGiven < 2) { out.error = 'Provide at least two of: density, molar mass, concentration.'; return out; }
@@ -76,7 +83,7 @@ window.SCIRESULTS_ABSORPTION = (function () {
     }
     /* for linear, alpha already set above */
 
-    var SYM = window.SCIREPO_SYMBOLS;
+    var SYM = window.SCIRESO_SYMBOLS;
     var symA = SYM ? SYM.symbol('alpha') : 'alpha';
     if (isNaN(alpha) || alpha < 0) { out.error = 'Invalid coefficient or derived ' + symA + '.'; return out; }
 

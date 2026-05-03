@@ -1,6 +1,6 @@
 /* Blackbody radiation: Wien, Stefan-Boltzmann, Planck spectrum */
 
-window.SCIREPO_BLACKBODY = (function () {
+window.SCIRESO_BLACKBODY = (function () {
   'use strict';
 
   var H = 6.62607015e-34;   // J·s
